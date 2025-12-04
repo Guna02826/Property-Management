@@ -1,0 +1,13 @@
+Roles:
+Owner
+-Add building details to the app
+-Building details contains of location, name, 
+-
+
+Manager
+(If in case)Assistant Manager
+Sales Rep
+
+Client
+
+Future Configurable according to hierarchy must be enabled for instance if manager is added, then salesrep must be over seen by manager
