@@ -1,0 +1,56 @@
+
+
+### Primary Goal
+
+Refactor the existing code and update the deployment configurations for the Enterprise Multi-Floor Commercial Office Leasing Platform (v1.0) to implement a **cost-optimized, simplified Phase 1 (MVP) architecture**. The primary objective is to eliminate unnecessary complexity and cost by prioritizing managed serverless services, postponing complex infrastructure (Kubernetes, Service Mesh), and deferring optional Phase 3/4 features (AI/ML models, Vector DBs, AR/VR) as detailed in the cost-saving assessment.
+
+---
+
+### 1. ☁️ Infrastructure & Deployment Simplification (Focus: Cloud Run/Fargate)
+
+The goal is to strictly implement the **Phase 1 architecture** utilizing managed serverless container platforms.
+
+* **Task 1.1: Environment Variables Update:**
+    * Review and update all environment variable configurations (`.env`, secret store definitions) to only include variables required for the Phase 1 stack (Node.js/Fastify, Postgres, Redis, S3/Object Storage, JWT secrets).
+    * **Remove** any references to environment variables or connection settings related to Kafka, Kubernetes, Istio/Linkerd, and external Vector Databases.
+* **Task 1.2: Deployment Scripts & CI/CD Refactoring:**
+    * Modify or create new CI/CD deployment scripts (e.g., GitHub Actions, GitLab CI, or Cloud Build) to target **Google Cloud Run** or **AWS ECS Fargate** instead of Kubernetes (GKE/EKS/AKS).
+    * Ensure the deployment configuration correctly separates the **API Service** and the **WebSocket Service** into two distinct, auto-scaling Cloud Run/Fargate services, as per the Phase 1 architecture diagram.
+* **Task 1.3: Health Check Implementation:**
+    * Verify the `/health`, `/ready`, and `/live` endpoints are correctly implemented in the Fastify application code to meet the requirements of the managed container platform (e.g., Cloud Run requires the service to listen on `$PORT`).
+
+---
+
+### 2. 🗄️ Database & Schema Optimization
+
+The goal is to consolidate analytical and vector requirements into PostgreSQL (PostGIS, pgvector).
+
+* **Task 2.1: PostGIS/Vector Integration:**
+    * Investigate and implement the use of the **PostgreSQL extension `pgvector`** for similarity search functionality, effectively replacing the need for a separate Vector Database (Pinecone, Weaviate) in Phase 3.
+    * Ensure the existing `idx_buildings_location` index using `ll_to_earth` (PostGIS-like function) is correctly configured and used in relevant search queries (`GET /api/v1/spaces`).
+* **Task 2.2: Data Access Layer Cleanup:**
+    * Review the ORM (Prisma/TypeORM) configuration. **Remove all code references and configuration files related to MongoDB, InfluxDB, or TimescaleDB**, ensuring all data persistence logic points only to PostgreSQL.
+* **Task 2.3: Index Verification:**
+    * Validate that all performance-critical indexes defined in the schema (e.g., `idx_spaces_search`, `idx_contracts_active_space`, `idx_bids_unique_pending`) are being utilized by the ORM/query builder for common API calls.
+
+---
+
+### 3. 🖥️ Code & Feature Deferral (Frontend & Backend)
+
+The goal is to remove or disable code paths associated with features scheduled for Phase 3/4.
+
+* **Task 3.1: Frontend Feature Removal:**
+    * **Disable/Remove** all frontend code, libraries, and dependencies related to **AR/VR (Three.js, A-Frame)**.
+    * Review the `GET /api/v1/spaces/:id` response handling on the frontend. While the fields can remain, **disable the rendering** of `similar_spaces` and `ai_recommendation_score` to reflect the deferral of the ML services.
+* **Task 3.2: Backend AI/ML Code Removal:**
+    * **Remove all code and configuration related to dedicated AI/ML services** (Python runtime, TensorFlow, PyTorch, SageMaker/Vertex AI configuration).
+    * In the Space Endpoints controller, **comment out or stub** the logic that calculates or fetches `similar_spaces` and `ai_recommendation_score` from the backend, ensuring the response returns default/empty values to avoid errors until Phase 3/4.
+* **Task 3.3: WebSocket Review:**
+    * Ensure the WebSocket implementation (`Socket.io` or native) is configured to use **Redis as the adapter** for multi-instance pub/sub capability, which is essential when deploying the WebSocket Service across multiple Cloud Run instances.
+
+---
+
+### 4. 📝 Documentation Update
+
+* **Task 4.1: Technical Specification Update:**
+    * Update the `Technical-Implementation-Details.md` file to reflect the immediate cost-saving changes in Section 7.1 and Section 1.4, clearly stating that **Kubernetes/Istio and dedicated Vector DBs are deferred past Phase 1.**
