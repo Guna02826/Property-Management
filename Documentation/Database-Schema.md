@@ -77,14 +77,32 @@
        │                    │
        │ N:1                │ N:1
        │                    │
-┌──────▼──────────┐  ┌──────▼──────────┐
-│   notifications │  │  audit_logs     │
-│─────────────────│  │─────────────────│
-│ id (PK)         │  │ id (PK)         │
-│ user_id (FK)    │  │ user_id (FK)     │
-│ type            │  │ action          │
-│ ...             │  │ ...             │
-└─────────────────┘  └─────────────────┘
+┌──────▼──────────┐  ┌──────▼──────────┐      ┌──────────────────┐
+│   notifications │  │  audit_logs     │      │  private_visits   │
+│─────────────────│  │─────────────────│      │──────────────────│
+│ id (PK)         │  │ id (PK)         │      │ id (PK)          │
+│ user_id (FK)    │  │ user_id (FK)     │      │ space_id (FK)    │
+│ type            │  │ action          │      │ client_id (FK)   │
+│ ...             │  │ ...             │      │ sales_rep_id (FK)│
+└─────────────────┘  └─────────────────┘      │ visit_date       │
+                                              │ start_time       │
+                                              │ end_time         │
+                                              │ ...              │
+                                              └──────────────────┘
+                                                       │
+                                                       │ N:1
+                                                       │
+┌──────────────────┐      ┌───────────────────────────▼──────────────┐
+│role_hierarchy_  │      │      user_role_hierarchy                │
+│config           │      │──────────────────────────────────────────│
+│─────────────────│      │ id (PK)                                  │
+│ id (PK)         │      │ parent_user_id (FK)                      │
+│ organization_id │      │ child_user_id (FK)                        │
+│ parent_role     │      │ hierarchy_config_id (FK)                  │
+│ child_role      │      │ is_active                                │
+│ is_enabled      │      │ ...                                      │
+│ ...             │      └──────────────────────────────────────────┘
+└─────────────────┘
 ```
 
 ---
@@ -103,7 +121,8 @@ CREATE TABLE users (
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
     role VARCHAR(20) NOT NULL CHECK (role IN (
-        'SUPER_ADMIN', 'OWNER', 'CLIENT', 'BROKER', 'AGENT', 'SUPPORT'
+        'SUPER_ADMIN', 'OWNER', 'CLIENT', 'BROKER', 'AGENT', 'SUPPORT', 
+        'MANAGER', 'ASSISTANT_MANAGER', 'SALES_REP'
     )),
     email_verified BOOLEAN DEFAULT FALSE,
     two_factor_enabled BOOLEAN DEFAULT FALSE,
@@ -342,7 +361,111 @@ CREATE TABLE notifications (
 - `idx_notifications_created_at` on `created_at`
 - `idx_notifications_user_unread` on `(user_id, is_read, created_at)` WHERE `is_read = FALSE`
 
-### 3.9 audit_logs
+### 3.9 private_visits
+
+Stores private visit bookings for spaces with conflict detection to prevent scheduling clashes on the same day.
+
+```sql
+CREATE TABLE private_visits (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    space_id UUID REFERENCES spaces(id) ON DELETE RESTRICT NOT NULL,
+    client_id UUID REFERENCES users(id) ON DELETE RESTRICT NOT NULL,
+    sales_rep_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    visit_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    status VARCHAR(20) DEFAULT 'SCHEDULED' CHECK (status IN (
+        'SCHEDULED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'
+    )),
+    visit_type VARCHAR(20) DEFAULT 'PRIVATE' CHECK (visit_type IN (
+        'PRIVATE', 'GROUP', 'VIRTUAL'
+    )),
+    notes TEXT,
+    contact_preference VARCHAR(20), -- CALL, WHATSAPP, EMAIL
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id),
+    CHECK (end_time > start_time)
+);
+```
+
+**Indexes:**
+- `idx_private_visits_space_id` on `space_id`
+- `idx_private_visits_client_id` on `client_id`
+- `idx_private_visits_sales_rep_id` on `sales_rep_id`
+- `idx_private_visits_date` on `visit_date`
+- `idx_private_visits_status` on `status`
+- `idx_private_visits_date_space` on `(visit_date, space_id)` -- For conflict detection
+- `idx_private_visits_date_time_range` on `(visit_date, start_time, end_time)` -- For time conflict detection
+
+**Conflict Detection:**
+- Unique constraint prevents overlapping visits on the same space and date
+- Application logic validates time overlaps before insertion
+- Query checks for existing visits on same date with overlapping time ranges
+
+### 3.10 role_hierarchy_config
+
+Stores configurable role hierarchy relationships to enable/disable hierarchical oversight.
+
+```sql
+CREATE TABLE role_hierarchy_config (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID, -- NULL for global config, UUID for organization-specific
+    parent_role VARCHAR(20) NOT NULL CHECK (parent_role IN (
+        'MANAGER', 'ASSISTANT_MANAGER', 'OWNER', 'SUPER_ADMIN'
+    )),
+    child_role VARCHAR(20) NOT NULL CHECK (child_role IN (
+        'SALES_REP', 'ASSISTANT_MANAGER', 'MANAGER', 'BROKER'
+    )),
+    is_enabled BOOLEAN DEFAULT TRUE,
+    requires_approval BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id),
+    UNIQUE(organization_id, parent_role, child_role)
+);
+```
+
+**Indexes:**
+- `idx_role_hierarchy_config_org` on `organization_id`
+- `idx_role_hierarchy_config_parent` on `parent_role`
+- `idx_role_hierarchy_config_child` on `child_role`
+- `idx_role_hierarchy_config_enabled` on `(is_enabled, parent_role, child_role)`
+
+**Default Hierarchy Rules:**
+- If Manager role exists, Sales Rep must be overseen by Manager
+- Assistant Manager reports to Manager
+- Manager reports to Owner
+- Hierarchy can be enabled/disabled per organization
+
+### 3.11 user_role_hierarchy
+
+Stores actual hierarchical relationships between users based on role hierarchy configuration.
+
+```sql
+CREATE TABLE user_role_hierarchy (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    parent_user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    child_user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    hierarchy_config_id UUID REFERENCES role_hierarchy_config(id) ON DELETE SET NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id),
+    UNIQUE(parent_user_id, child_user_id),
+    CHECK (parent_user_id != child_user_id)
+);
+```
+
+**Indexes:**
+- `idx_user_role_hierarchy_parent` on `parent_user_id`
+- `idx_user_role_hierarchy_child` on `child_user_id`
+- `idx_user_role_hierarchy_active` on `(is_active, parent_user_id)`
+
+### 3.12 audit_logs
 
 Stores audit trail for all system actions.
 
@@ -387,6 +510,12 @@ CREATE TABLE audit_logs (
 | users | payments | 1:N | RESTRICT |
 | users | notifications | 1:N | CASCADE |
 | users | audit_logs | 1:N | SET NULL |
+| spaces | private_visits | 1:N | RESTRICT |
+| users | private_visits | 1:N (client) | RESTRICT |
+| users | private_visits | 1:N (sales_rep) | SET NULL |
+| users | user_role_hierarchy | 1:N (parent) | CASCADE |
+| users | user_role_hierarchy | 1:N (child) | CASCADE |
+| role_hierarchy_config | user_role_hierarchy | 1:N | SET NULL |
 
 ### 4.2 Relationship Details
 
@@ -441,6 +570,10 @@ CREATE TABLE audit_logs (
 | contracts | idx_contracts_active_space | space_id | UNIQUE Partial | One active contract |
 | payments | idx_payments_status_due_date | (status, due_date) | B-tree | Payment queries |
 | notifications | idx_notifications_user_unread | (user_id, is_read, created_at) | Partial | Unread notifications |
+| private_visits | idx_private_visits_date_space | (visit_date, space_id) | B-tree | Conflict detection |
+| private_visits | idx_private_visits_date_time_range | (visit_date, start_time, end_time) | B-tree | Time conflict detection |
+| role_hierarchy_config | idx_role_hierarchy_config_enabled | (is_enabled, parent_role, child_role) | B-tree | Active hierarchy queries |
+| user_role_hierarchy | idx_user_role_hierarchy_active | (is_active, parent_user_id) | B-tree | Active hierarchy relationships |
 
 ---
 
@@ -462,6 +595,12 @@ CREATE TABLE audit_logs (
 | contracts | end_date > start_date OR end_date IS NULL | Valid date range |
 | payments | status IN (...) | Valid payment status |
 | payments | installment_number > 0 AND <= total_installments | Valid installment |
+| private_visits | status IN (...) | Valid visit status |
+| private_visits | visit_type IN (...) | Valid visit type |
+| private_visits | end_time > start_time | Valid time range |
+| role_hierarchy_config | parent_role IN (...) | Valid parent role |
+| role_hierarchy_config | child_role IN (...) | Valid child role |
+| user_role_hierarchy | parent_user_id != child_user_id | No self-reference |
 
 ### 6.2 Unique Constraints
 
@@ -471,6 +610,8 @@ CREATE TABLE audit_logs (
 | floors | floors_building_floor_unique | (building_id, floor_number) |
 | bids | bids_unique_pending | (space_id, client_id) WHERE status = 'PENDING' |
 | contracts | contracts_active_space_unique | space_id WHERE status = 'ACTIVE' |
+| role_hierarchy_config | role_hierarchy_config_unique | (organization_id, parent_role, child_role) |
+| user_role_hierarchy | user_role_hierarchy_unique | (parent_user_id, child_user_id) |
 
 ### 6.3 Foreign Key Constraints
 
@@ -505,6 +646,9 @@ All foreign keys enforce referential integrity:
 - `BROKER` - Sales representative/broker
 - `AGENT` - Support agent
 - `SUPPORT` - Customer support
+- `MANAGER` - Property Manager
+- `ASSISTANT_MANAGER` - Assistant Property Manager
+- `SALES_REP` - Sales Representative
 
 **Space Usage Types:**
 - `OFFICE` - Office space
@@ -541,6 +685,18 @@ All foreign keys enforce referential integrity:
 - `PAID` - Payment received
 - `OVERDUE` - Payment overdue
 - `CANCELLED` - Payment cancelled
+
+**Private Visit Status:**
+- `SCHEDULED` - Visit scheduled
+- `CONFIRMED` - Visit confirmed
+- `COMPLETED` - Visit completed
+- `CANCELLED` - Visit cancelled
+- `NO_SHOW` - Client did not show up
+
+**Private Visit Type:**
+- `PRIVATE` - Private visit (one-on-one)
+- `GROUP` - Group visit
+- `VIRTUAL` - Virtual tour
 
 ---
 

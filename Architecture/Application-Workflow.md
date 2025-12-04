@@ -148,7 +148,48 @@ Registration → Email Verification → Profile Setup → First Login → Dashbo
   - Share tour link with team members
   - Schedule in-person viewing
 
-**Step 2.5: Space Comparison**
+**Step 2.5: Private Visit Booking**
+- User selects "Book Private Visit" on space detail page
+- System displays:
+  - Available time slots for selected date
+  - Conflict detection (prevents overlapping visits on same day)
+  - Visit type options (PRIVATE, GROUP, VIRTUAL)
+  - Contact preference (CALL, WHATSAPP, EMAIL)
+- User selects:
+  - Visit date
+  - Start time and end time
+  - Visit type
+  - Optional sales rep assignment
+  - Contact preference
+- System validates:
+  - No conflicts with existing visits (same space, same date, overlapping times)
+  - Space availability
+  - User permissions
+- If conflict detected:
+  - System suggests alternative time slots
+  - User can choose different time or date
+- Visit is created with status "SCHEDULED"
+- Notifications sent to:
+  - Client (confirmation)
+  - Assigned sales rep (if any)
+  - Manager (if hierarchy requires oversight)
+
+**API Endpoints:**
+- `POST /api/v1/spaces/{id}/visits` - Create visit booking
+- `GET /api/v1/spaces/{id}/visits/available-slots?date={date}` - Get available time slots
+- `GET /api/v1/visits` - List user's visits
+- `PATCH /api/v1/visits/{id}` - Update visit details
+- `POST /api/v1/visits/{id}/cancel` - Cancel visit
+
+**Technical Notes:**
+- Conflict detection checks for overlapping time ranges on same date for same space
+- Only visits with status SCHEDULED or CONFIRMED are considered for conflicts
+- Visit status transitions: SCHEDULED → CONFIRMED → COMPLETED/CANCELLED/NO_SHOW
+- Hierarchy enforcement: Sales rep visits may require manager approval if configured
+
+**Related:** [MVC VisitController](./MVC-Architecture.md#34-visit--scheduling-controllers), [Visit Conflict Detection](../Documentation/Visit-Conflict-Detection.md)
+
+**Step 2.6: Space Comparison**
 - User selects multiple spaces to compare
 - Side-by-side comparison shows:
   - Price differences
@@ -716,6 +757,9 @@ Team Management → Create Agents → Assign Permissions → Delegate Tasks → 
   - Specializations
   - Commission structure
   - Contact information
+- System enforces hierarchy:
+  - If Manager role exists in organization, Sales Rep must be assigned to a Manager
+  - Manager assignment is required before account activation (if hierarchy enabled)
 
 ### 2. Lead Management
 - Receives assigned leads from owners or the platform
@@ -732,7 +776,36 @@ Team Management → Create Agents → Assign Permissions → Delegate Tasks → 
   - Bidding
   - Closed
 
-### 3. Client Communication
+### 3. Visit Management
+- Books private visits for clients:
+  - Selects space and available time slot
+  - System checks for conflicts (same day, same space, overlapping times)
+  - Assigns visit to self or another sales rep
+- Manages assigned visits:
+  - Views visit calendar
+  - Confirms visits (status: SCHEDULED → CONFIRMED)
+  - Updates visit details (time, notes)
+  - Cancels visits if needed
+  - Marks visits as completed or no-show
+- Receives visit notifications:
+  - New visit assignments
+  - Visit confirmations
+  - Visit reminders (24 hours, 1 hour before)
+  - Visit cancellations
+- Hierarchy oversight:
+  - If Manager role exists, visits may require manager approval (if configured)
+  - Manager can view and manage subordinate visits
+  - Reports visit activities to manager
+
+**API Endpoints:**
+- `GET /api/v1/visits?assigned_to_me=true` - List assigned visits
+- `POST /api/v1/spaces/{id}/visits` - Book visit for client
+- `PATCH /api/v1/visits/{id}` - Update visit
+- `POST /api/v1/visits/{id}/confirm` - Confirm visit
+
+**Related:** [Visit Conflict Detection](../Documentation/Visit-Conflict-Detection.md), [Role Hierarchy System](../Documentation/Role-Hierarchy-System.md)
+
+### 4. Client Communication
 - Communicates with clients:
   - In-app messaging
   - Email integration
@@ -741,7 +814,7 @@ Team Management → Create Agents → Assign Permissions → Delegate Tasks → 
 - Maintains communication history
 - Sets follow-up reminders
 
-### 4. Deal Facilitation
+### 5. Deal Facilitation
 - Assists clients with:
   - Space selection
   - Bid preparation
@@ -750,7 +823,7 @@ Team Management → Create Agents → Assign Permissions → Delegate Tasks → 
 - Tracks deal progress
 - Receives commission notifications
 
-### 5. Commission & Performance Tracking
+### 6. Commission & Performance Tracking
 - Views commission dashboard:
   - Active deals
   - Commission amounts

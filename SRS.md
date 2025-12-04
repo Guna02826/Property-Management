@@ -168,11 +168,15 @@ The system SHALL support at least the following roles (FR-1.9, NFR-1.4):
 - `BROKER`
 - `AGENT`
 - `SUPPORT`
+- `MANAGER` - Property Manager
+- `ASSISTANT_MANAGER` - Assistant Property Manager
+- `SALES_REP` - Sales Representative
 
 These roles are enforced in:
 
 - `users.role` column (`Database-Schema.md`, `users` table).
 - Controller-level authorization checks (`MVC-Architecture.md` Section 3).
+- Configurable role hierarchy system (`role_hierarchy_config` and `user_role_hierarchy` tables).
 
 ### 3.2 Role-Based Access Control (RBAC)
 
@@ -182,7 +186,8 @@ The system SHALL:
 - Restrict Owner-only endpoints (e.g., building and space management) to `OWNER` and `SUPER_ADMIN`.
 - Restrict admin endpoints to `SUPER_ADMIN` only (AdminDashboardController).
 - Restrict client-only capabilities (e.g., bidding, viewing own leases, payments) to `CLIENT`.
-- Provide least-privilege access for `BROKER`, `AGENT`, `SUPPORT`, and `PROPERTY_MANAGER` based on use cases defined in `SRS-Complete.md` Section 3.1 and `Application-Workflow.md`.
+- Provide least-privilege access for `BROKER`, `AGENT`, `SUPPORT`, `MANAGER`, `ASSISTANT_MANAGER`, and `SALES_REP` based on use cases defined in `SRS-Complete.md` Section 3.1 and `Application-Workflow.md`.
+- Enforce configurable role hierarchy where `SALES_REP` must be overseen by `MANAGER` when `MANAGER` role exists (see `Role-Hierarchy-System.md`).
 
 ### 3.3 Authentication
 

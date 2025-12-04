@@ -44,7 +44,7 @@ This document describes the primary MVC components required to support the core 
   - Responsibilities:
     - Persist and retrieve user data.
     - Password hashing and verification helper methods.
-    - Role checks (`isClient`, `isOwner`, `isAdmin`, `isSalesRep`/`isBroker`).
+    - Role checks (`isClient`, `isOwner`, `isAdmin`, `isSalesRep`/`isBroker`, `isManager`, `isAssistantManager`).
   - Why this design:
     - Single user table with a `role` field keeps authentication and RBAC simple while still supporting multiple personas.
     - Fits workflows where the same login system is reused for client, owner, and admin dashboards.
@@ -145,6 +145,50 @@ This document describes the primary MVC components required to support the core 
     - `NotificationController` and notification bell/center views.
     - Triggered from `BidController`, `LeaseController`, `PaymentController`, etc., with `channel` values like `IN_APP`, `EMAIL`, `WHATSAPP` (SMS can be added later if needed).
 
+- **PrivateVisitModel**
+  - Fields: `id`, `spaceId`, `clientId`, `salesRepId`, `visitDate`, `startTime`, `endTime`, `status`, `visitType`, `notes`, `contactPreference`, `createdAt`, `updatedAt`, `createdBy`, `updatedBy`.
+  - Responsibilities:
+    - Store private visit bookings for spaces.
+    - Enforce conflict detection (no overlapping visits on same day for same space).
+    - Track visit lifecycle (SCHEDULED → CONFIRMED → COMPLETED/CANCELLED/NO_SHOW).
+  - Why this design:
+    - Separates visit scheduling from bids/contracts, allowing clients to view spaces before committing.
+    - Conflict detection prevents double-booking and scheduling clashes.
+    - Supports different visit types (PRIVATE, GROUP, VIRTUAL) for flexible scheduling.
+  - Where used:
+    - `VisitController` for booking and managing visits.
+    - Client space detail views for scheduling visits.
+    - Sales rep dashboards for managing assigned visits.
+    - Manager dashboards for overseeing subordinate visit activities.
+
+- **RoleHierarchyConfigModel**
+  - Fields: `id`, `organizationId`, `parentRole`, `childRole`, `isEnabled`, `requiresApproval`, `createdAt`, `updatedAt`, `createdBy`, `updatedBy`.
+  - Responsibilities:
+    - Store configurable role hierarchy rules (e.g., Manager oversees Sales Rep).
+    - Enable/disable hierarchy per organization.
+    - Define approval requirements for hierarchical actions.
+  - Why this design:
+    - Flexible hierarchy system that can be configured per organization.
+    - Supports business rules like "Sales Rep must be overseen by Manager when Manager exists".
+  - Where used:
+    - `AdminController` for hierarchy configuration.
+    - User creation/assignment logic to enforce hierarchy rules.
+    - Authorization checks for hierarchical permissions.
+
+- **UserRoleHierarchyModel**
+  - Fields: `id`, `parentUserId`, `childUserId`, `hierarchyConfigId`, `isActive`, `createdAt`, `updatedAt`, `createdBy`, `updatedBy`.
+  - Responsibilities:
+    - Store actual hierarchical relationships between users.
+    - Link users to hierarchy configuration rules.
+    - Track active/inactive relationships.
+  - Why this design:
+    - Implements the hierarchy defined in `RoleHierarchyConfigModel` at the user level.
+    - Allows dynamic assignment and reassignment of hierarchical relationships.
+  - Where used:
+    - User management workflows for assigning managers to sales reps.
+    - Authorization checks to determine oversight relationships.
+    - Manager dashboards for viewing subordinates.
+
 - **AuditLogModel**
   - Fields: `id`, `actorId`, `actionType`, `entityType`, `entityId`, `metadata`, `createdAt`.
   - Responsibilities:
@@ -153,7 +197,7 @@ This document describes the primary MVC components required to support the core 
     - Central audit log supports security reviews and troubleshooting without polluting business tables.
     - Scales well as more actions are added over time.
   - Where used:
-    - Written by controllers/services on key events (login, bid changes, lease sign, payment).
+    - Written by controllers/services on key events (login, bid changes, lease sign, payment, visit booking).
     - Read by admin tools and ops dashboards.
 
 ---
@@ -277,7 +321,31 @@ This document describes the primary MVC components required to support the core 
   - Where used:
     - Client/owner contract views for signing and reviewing lease/rental/sale details.
 
-### 3.4 Payment & Notification Controllers
+### 3.4 Visit & Scheduling Controllers
+
+- **VisitController**
+  - Endpoints:
+    - `POST /spaces/{id}/visits` – create private visit booking (client or sales rep).
+    - `GET /visits` – list visits (filtered by role: client sees own visits, sales rep sees assigned visits, manager sees subordinate visits).
+    - `GET /visits/{id}` – visit details.
+    - `PATCH /visits/{id}` – update visit (status, time, notes).
+    - `POST /visits/{id}/cancel` – cancel visit.
+    - `POST /visits/{id}/confirm` – confirm visit (sales rep/manager).
+    - `GET /spaces/{id}/visits/available-slots` – get available time slots for a date (conflict detection).
+  - Responsibilities:
+    - Validate visit booking requests and check for conflicts (same day, same space, overlapping times).
+    - Enforce hierarchy rules (sales rep visits may require manager approval if configured).
+    - Trigger notifications for visit confirmations, reminders, and cancellations.
+  - Why this design:
+    - Centralizes visit scheduling logic with conflict detection.
+    - Supports different user roles (client, sales rep, manager) with appropriate access levels.
+    - Integrates with hierarchy system for oversight and approval workflows.
+  - Where used:
+    - Client space detail views for booking visits.
+    - Sales rep dashboards for managing assigned visits.
+    - Manager dashboards for overseeing visit activities.
+
+### 3.5 Payment & Notification Controllers
 
 - **PaymentController**
   - Endpoints:
@@ -773,8 +841,10 @@ if (!space.isLeasable) {
 | `OfficeSpaceController` | `/api/v1/spaces` | `/` (GET, POST), `/{id}` (GET, PUT), `/search` |
 | `BidController` | `/api/v1/bids` | `/` (GET, POST), `/{id}` (GET), `/{id}/approve`, `/{id}/reject`, `/{id}/counter` |
 | `ContractController` | `/api/v1/contracts` | `/` (GET, POST), `/{id}` (GET), `/{id}/sign-client`, `/{id}/sign-owner` |
+| `VisitController` | `/api/v1/visits` | `/` (GET, POST), `/{id}` (GET, PATCH), `/{id}/cancel`, `/{id}/confirm`, `/spaces/{id}/available-slots` |
 | `PaymentController` | `/api/v1/payments` | `/` (GET, POST), `/{id}` (GET), `/{id}/record` |
 | `NotificationController` | `/api/v1/notifications` | `/` (GET), `/{id}/read` |
+| `RoleHierarchyController` | `/api/v1/admin/role-hierarchy` | `/config` (GET, POST), `/config/{id}` (PATCH), `/relationships` (GET, POST, DELETE) |
 
 ### Model → Database Table Quick Map
 
@@ -786,8 +856,11 @@ if (!space.isLeasable) {
 | `OfficeSpaceModel` | `spaces` | `id` (UUID) | `floor_id → floors.id` |
 | `BidModel` | `bids` | `id` (UUID) | `space_id → spaces.id`, `client_id → users.id` |
 | `ContractModel` | `contracts` | `id` (UUID) | `space_id → spaces.id`, `client_id → users.id`, `owner_id → users.id` |
+| `PrivateVisitModel` | `private_visits` | `id` (UUID) | `space_id → spaces.id`, `client_id → users.id`, `sales_rep_id → users.id` |
 | `PaymentModel` | `payments` | `id` (UUID) | `contract_id → contracts.id`, `payer_id → users.id` |
 | `NotificationModel` | `notifications` | `id` (UUID) | `user_id → users.id` |
+| `RoleHierarchyConfigModel` | `role_hierarchy_config` | `id` (UUID) | - |
+| `UserRoleHierarchyModel` | `user_role_hierarchy` | `id` (UUID) | `parent_user_id → users.id`, `child_user_id → users.id`, `hierarchy_config_id → role_hierarchy_config.id` |
 
 ### Common Patterns
 

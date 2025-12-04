@@ -121,6 +121,20 @@ This document provides an index of all documentation files in the project.
    - **Contents:** Code of conduct, development workflow, coding standards, commit guidelines, PR process, testing requirements, code review guidelines
    - **Status:** ✅ Complete
 
+10. **Visit-Conflict-Detection.md**
+    - **Purpose:** Private visit booking system with conflict detection
+    - **Audience:** Developers, Product Managers
+    - **Contents:** Visit booking schema, conflict detection logic, implementation examples, API endpoints, role-based access, notifications
+    - **Status:** ✅ Complete
+    - **Location:** `Documentation/Visit-Conflict-Detection.md`
+
+11. **Role-Hierarchy-System.md**
+    - **Purpose:** Configurable role hierarchy system documentation
+    - **Audience:** Developers, System Administrators
+    - **Contents:** Hierarchy configuration, default rules, implementation examples, API endpoints, business logic integration, migration guide
+    - **Status:** ✅ Complete
+    - **Location:** `Documentation/Role-Hierarchy-System.md`
+
 ---
 
 ---
@@ -144,9 +158,9 @@ These draft/preliminary files have been moved to the `Archive/` folder:
 
 ## 📊 Documentation Statistics
 
-- **Total Documentation Files:** 11 core files
+- **Total Documentation Files:** 13 core files
 - **Core Requirements:** 2 files
-- **Development Documentation:** 9 files
+- **Development Documentation:** 11 files
 - **Total Pages (estimated):** ~200+ pages
 - **Coverage:** Complete documentation set for development, deployment, and usage
 

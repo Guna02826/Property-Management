@@ -40,6 +40,7 @@ Assistant Manager (If applicable)
 Sales Rep (Sales Representative / Broker)
 - Manage client relationships and leads
 - Conduct virtual tours and schedule viewings
+- Schedule and manage private visits for clients
 - Process lease applications
 - Track commissions and sales metrics
 - Use CRM tools for lead management
@@ -48,13 +49,15 @@ Sales Rep (Sales Representative / Broker)
 - Assist clients with bidding process
 - Generate sales reports
 - Access client information (with permissions)
-- Note: Must be overseen by Manager if Manager role exists in hierarchy
+- Note: Must be overseen by Manager if Manager role exists in hierarchy (enforced by role_hierarchy_config)
 
 Client (Tenant)
 - Search and filter spaces by location, size, price, amenities, and availability
 - View spaces on interactive map with property markers
 - Compare multiple spaces side-by-side
 - View virtual tours and 3D floor plans
+- Book private visits for spaces (with automatic conflict detection)
+- View scheduled visits and visit history
 - Receive AI-powered space recommendations
 - Place bids on available spaces
 - Track bid status (Pending, Approved, Rejected, Counter-Offered, Withdrawn)
@@ -65,7 +68,7 @@ Client (Tenant)
 - Record external payments (bank transfer, cheque, external gateway)
 - Download invoices and receipts
 - Rate and review spaces
-- Receive notifications for bid updates, lease milestones, and payment events
+- Receive notifications for bid updates, lease milestones, payment events, and visit confirmations
 - Manage notification preferences
 
 Support / Agent
@@ -88,9 +91,15 @@ System Administrator / Super Admin
 - Access all system features and data
 - Manage role hierarchies and permissions
 
-Future Requirements:
-- Configurable role hierarchy must be enabled
-- If Manager role is added, Sales Rep must be overseen by Manager
-- Role permissions should be configurable per organization
-- Support for custom roles and permission sets
+Implemented Features:
+- Configurable role hierarchy system (role_hierarchy_config table)
+- If Manager role is added, Sales Rep must be overseen by Manager (enforced via hierarchy config)
+- Role permissions configurable per organization
 - Hierarchical reporting structure (Manager → Sales Rep → Client interactions)
+- Private visit booking with automatic conflict detection
+- Visit scheduling prevents clashes on the same day for the same space
+
+Future Requirements:
+- Support for custom roles and permission sets
+- Advanced visit scheduling with time slot management
+- Visit reminder notifications

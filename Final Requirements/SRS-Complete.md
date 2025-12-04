@@ -145,19 +145,22 @@ A cloud-based SaaS platform for managing multi-floor commercial office space lea
 ### 3.1 Role Definitions
 
 #### Client / Tenant
-Search and lease office spaces. Capabilities: search/filter spaces, map view, space comparison, virtual tours, AI recommendations, place/track bids, view leases and payment schedules, download contracts, rate and review.
+Search and lease office spaces. Capabilities: search/filter spaces, map view, space comparison, virtual tours, AI recommendations, book private visits (with automatic conflict detection), view scheduled visits, place/track bids, view leases and payment schedules, download contracts, rate and review.
 
 #### Building Owner / Admin
 Manage property portfolio and maximize occupancy/revenue. Capabilities: manage buildings/floors/spaces (bulk operations), set pricing with AI suggestions, view occupancy/revenue dashboards and heatmaps, approve/reject/counter bids, auto-generate leases, track metrics, delegate permissions, export reports.
 
 #### Sales Representative / Broker
-Manage client relationships and facilitate deals. Capabilities: manage leads and pipeline, conduct virtual tours, in-app messaging, process applications, track commissions, CRM tools, schedule viewings.
+Manage client relationships and facilitate deals. Capabilities: manage leads and pipeline, conduct virtual tours, in-app messaging, process applications, track commissions, CRM tools, schedule private visits with conflict detection, manage assigned visits. Note: Must be overseen by Manager when Manager role exists (enforced by configurable role hierarchy).
+
+#### Manager (Property Manager)
+Oversee day-to-day building operations and sales team. Capabilities: coordinate maintenance, manage tenant relationships, track service requests, monitor occupancy/utilization, coordinate vendors, oversee Sales Reps and Assistant Managers, approve visits (if hierarchy requires), view team performance metrics, manage visit schedules for subordinates.
+
+#### Assistant Manager
+Assist Property Manager with day-to-day operations. Capabilities: manage service requests (limited authority), view occupancy and utilization metrics, coordinate vendors (with manager approval), access building and space information (read-only for sensitive data), generate operational reports (limited scope). Reports to Manager.
 
 #### Support / Agent
 Assist users with inquiries and issues. Capabilities: client support, limited data access, manage communications and escalations, track tasks, view support metrics.
-
-#### Property Manager
-Oversee day-to-day building operations. Capabilities: coordinate maintenance, manage tenant relationships, track service requests, monitor occupancy/utilization, coordinate vendors.
 
 #### Financial Officer
 Manage financial operations and reporting. Capabilities: track payment schedules and status, generate invoices/receipts, financial reports, multi-currency transactions, export to accounting systems, monitor trends.
@@ -183,7 +186,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 **FR-1.6** The system shall require two-factor authentication when enabled.  
 **FR-1.7** The system shall lock accounts after 5 failed login attempts for 15 minutes.  
 **FR-1.8** The system shall allow users to view and update their profile information.  
-**FR-1.9** The system shall assign users to one of the following roles: Super Admin, Owner, Agent, Client, Broker, or Support.  
+**FR-1.9** The system shall assign users to one of the following roles: Super Admin, Owner, Client, Broker, Agent, Support, Manager, Assistant Manager, or Sales Rep.  
 **FR-1.10** The system shall enforce role-based access control for all features.
 
 ### 4.2 Building & Floor Management
@@ -213,80 +216,106 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 **FR-4.5** The system shall return only leasable spaces in client search results.  
 **FR-4.6** The system shall use cursor-based pagination for all list endpoints.
 
-### 4.5 Bidding & Negotiation
+### 4.5 Private Visit Booking
 
-**FR-5.1** The system shall allow clients to place bids on available spaces.  
-**FR-5.2** The system shall send real-time bid notifications to space owners via WebSockets.  
-**FR-5.3** The system shall allow owners to approve, reject, or counter bids.  
-**FR-5.4** The system shall track bid status (Pending, Approved, Rejected, Counter-Offered, Withdrawn).  
-**FR-5.5** The system shall prevent duplicate bids from the same client on the same space.  
-**FR-5.6** The system shall maintain bid history for each space and user.  
-**FR-5.7** The system shall notify clients when their bid status changes.
+**FR-5.1** The system shall allow clients to book private visits for spaces.  
+**FR-5.2** The system shall prevent scheduling conflicts when two visits occur on the same day for the same space (no overlapping time ranges).  
+**FR-5.3** The system shall detect and prevent time overlaps between visits scheduled for the same space on the same date.  
+**FR-5.4** The system shall suggest alternative available time slots when a conflict is detected.  
+**FR-5.5** The system shall allow sales representatives to book visits on behalf of clients.  
+**FR-5.6** The system shall track visit status (SCHEDULED, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW).  
+**FR-5.7** The system shall support different visit types (PRIVATE, GROUP, VIRTUAL).  
+**FR-5.8** The system shall send visit confirmation notifications to clients and assigned sales representatives.  
+**FR-5.9** The system shall send visit reminder notifications (24 hours and 1 hour before scheduled time).  
+**FR-5.10** The system shall allow clients to view their scheduled visits and visit history.  
+**FR-5.11** The system shall allow sales representatives to view and manage visits assigned to them.  
+**FR-5.12** The system shall allow managers to view all visits for their subordinate team members.
 
-### 4.6 Lease & Contract Management
+### 4.6 Role Hierarchy & Management
 
-**FR-6.1** The system shall automatically generate lease documents from approved bids.  
-**FR-6.2** The system shall support lease, rental, and sale contract types.  
-**FR-6.3** The system shall allow multi-party approval workflows for contracts.  
-**FR-6.4** The system shall integrate with e-signature platforms (DocuSign, Adobe Sign).  
-**FR-6.5** The system shall send lease expiration reminders (30, 60, 90 days before expiry).  
-**FR-6.6** The system shall track contract status (Draft, Pending Signature, Active, Expired, Terminated).  
-**FR-6.7** The system shall maintain contract versioning and audit logs.
+**FR-5.13** The system shall support configurable role hierarchy relationships.  
+**FR-5.14** The system shall enforce that Sales Rep must be overseen by Manager when Manager role exists in the organization.  
+**FR-5.15** The system shall allow enabling or disabling hierarchy rules per organization.  
+**FR-5.16** The system shall support hierarchical approval workflows (e.g., Sales Rep actions requiring Manager approval).  
+**FR-5.17** The system shall allow managers to view and manage activities of subordinate team members (Sales Reps, Assistant Managers).  
+**FR-5.18** The system shall track hierarchical relationships between users in the `user_role_hierarchy` table.  
+**FR-5.19** The system shall validate hierarchy rules when creating or assigning users to roles.
 
-### 4.7 Payment Tracking
+### 4.7 Bidding & Negotiation
 
-**FR-7.1** The system shall generate payment schedules based on lease terms and EMI plans.  
-**FR-7.2** The system shall track payment status (Scheduled, Due, Paid, Overdue, Cancelled).  
-**FR-7.3** The system shall allow recording of payments made outside the platform (bank transfer, cheque, external gateway).  
-**FR-7.4** The system shall generate invoices automatically based on recorded payments.  
-**FR-7.5** The system shall support multi-currency payment tracking.  
-**FR-7.6** The system shall track installment numbers and total installments for EMI plans.  
-**FR-7.7** The system shall send payment due and overdue reminders.
+**FR-6.1** The system shall allow clients to place bids on available spaces.  
+**FR-6.2** The system shall send real-time bid notifications to space owners via WebSockets.  
+**FR-6.3** The system shall allow owners to approve, reject, or counter bids.  
+**FR-6.4** The system shall track bid status (Pending, Approved, Rejected, Counter-Offered, Withdrawn).  
+**FR-6.5** The system shall prevent duplicate bids from the same client on the same space.  
+**FR-6.6** The system shall maintain bid history for each space and user.  
+**FR-6.7** The system shall notify clients when their bid status changes.
 
-### 4.8 Dashboards & Reporting
+### 4.8 Lease & Contract Management
 
-**FR-8.1** The system shall display owner dashboards with occupancy rates, revenue, active bids, and pending leases.  
-**FR-8.2** The system shall display client dashboards with active bids, lease status, and upcoming payment schedule.  
-**FR-8.3** The system shall show occupancy heatmaps at building, floor, and space levels.  
-**FR-8.4** The system shall calculate and display upcoming income from scheduled payments.  
-**FR-8.5** The system shall allow export of reports in CSV, PDF, and Excel formats.
+**FR-7.1** The system shall automatically generate lease documents from approved bids.  
+**FR-7.2** The system shall support lease, rental, and sale contract types.  
+**FR-7.3** The system shall allow multi-party approval workflows for contracts.  
+**FR-7.4** The system shall integrate with e-signature platforms (DocuSign, Adobe Sign).  
+**FR-7.5** The system shall send lease expiration reminders (30, 60, 90 days before expiry).  
+**FR-7.6** The system shall track contract status (Draft, Pending Signature, Active, Expired, Terminated).  
+**FR-7.7** The system shall maintain contract versioning and audit logs.
 
-### 4.9 Notifications
+### 4.9 Payment Tracking
 
-**FR-9.1** The system shall send notifications via email, WhatsApp, push, and in-app channels.  
-**FR-9.2** The system shall send automated notifications for bid updates, lease milestones, and payment events.  
-**FR-9.3** The system shall allow users to configure notification preferences.  
-**FR-9.4** The system shall mark notifications as read and unread.
+**FR-8.1** The system shall generate payment schedules based on lease terms and EMI plans.  
+**FR-8.2** The system shall track payment status (Scheduled, Due, Paid, Overdue, Cancelled).  
+**FR-8.3** The system shall allow recording of payments made outside the platform (bank transfer, cheque, external gateway).  
+**FR-8.4** The system shall generate invoices automatically based on recorded payments.  
+**FR-8.5** The system shall support multi-currency payment tracking.  
+**FR-8.6** The system shall track installment numbers and total installments for EMI plans.  
+**FR-8.7** The system shall send payment due and overdue reminders.
 
-### 4.10 AI & Analytics
+### 4.10 Dashboards & Reporting
 
-**FR-10.1** The system shall provide AI-powered pricing suggestions for spaces.  
-**FR-10.2** The system shall provide AI-powered space recommendations to clients based on preferences.  
-**FR-10.3** The system shall provide AI-suggested bid strategies to clients.  
-**FR-10.4** The system shall calculate occupancy and revenue forecasts.  
-**FR-10.5** The system shall calculate bid success probability scores.
+**FR-9.1** The system shall display owner dashboards with occupancy rates, revenue, active bids, and pending leases.  
+**FR-9.2** The system shall display client dashboards with active bids, lease status, and upcoming payment schedule.  
+**FR-9.3** The system shall display manager dashboards with team performance, visit statistics, and subordinate activities.  
+**FR-9.4** The system shall show occupancy heatmaps at building, floor, and space levels.  
+**FR-9.5** The system shall calculate and display upcoming income from scheduled payments.  
+**FR-9.6** The system shall allow export of reports in CSV, PDF, and Excel formats.
 
-### 4.11 Security & Compliance
+### 4.11 Notifications
 
-**FR-11.1** The system shall encrypt data at rest using AES-256.  
-**FR-11.2** The system shall encrypt data in transit using TLS 1.3.  
-**FR-11.3** The system shall maintain audit logs for all user actions.  
-**FR-11.4** The system shall track created_by and updated_by for all records.  
-**FR-11.5** The system shall enforce session timeouts for inactive users.
+**FR-10.1** The system shall send notifications via email, WhatsApp, push, and in-app channels.  
+**FR-10.2** The system shall send automated notifications for bid updates, lease milestones, payment events, and visit confirmations/reminders.  
+**FR-10.3** The system shall allow users to configure notification preferences.  
+**FR-10.4** The system shall mark notifications as read and unread.
 
-### 4.12 Mobile Features
+### 4.12 AI & Analytics
 
-**FR-12.1** The system shall send push notifications to mobile devices.  
-**FR-12.2** The system shall support QR code scanning for property details.  
-**FR-12.3** The system shall support GPS-based property discovery.
+**FR-11.1** The system shall provide AI-powered pricing suggestions for spaces.  
+**FR-11.2** The system shall provide AI-powered space recommendations to clients based on preferences.  
+**FR-11.3** The system shall provide AI-suggested bid strategies to clients.  
+**FR-11.4** The system shall calculate occupancy and revenue forecasts.  
+**FR-11.5** The system shall calculate bid success probability scores.
 
-### 4.13 Data Management
+### 4.13 Security & Compliance
 
-**FR-13.1** The system shall validate that gross square footage is greater than or equal to usable square footage.  
-**FR-13.2** The system shall validate that floor numbers are unique per building.  
-**FR-13.3** The system shall validate email format (RFC 5322 compliant).  
-**FR-13.4** The system shall validate password strength (minimum 8 characters, 1 uppercase, 1 lowercase, 1 number).  
-**FR-13.5** The system shall prevent duplicate email addresses during registration.
+**FR-12.1** The system shall encrypt data at rest using AES-256.  
+**FR-12.2** The system shall encrypt data in transit using TLS 1.3.  
+**FR-12.3** The system shall maintain audit logs for all user actions.  
+**FR-12.4** The system shall track created_by and updated_by for all records.  
+**FR-12.5** The system shall enforce session timeouts for inactive users.
+
+### 4.14 Mobile Features
+
+**FR-13.1** The system shall send push notifications to mobile devices.  
+**FR-13.2** The system shall support QR code scanning for property details.  
+**FR-13.3** The system shall support GPS-based property discovery.
+
+### 4.15 Data Management
+
+**FR-14.1** The system shall validate that gross square footage is greater than or equal to usable square footage.  
+**FR-14.2** The system shall validate that floor numbers are unique per building.  
+**FR-14.3** The system shall validate email format (RFC 5322 compliant).  
+**FR-14.4** The system shall validate password strength (minimum 8 characters, 1 uppercase, 1 lowercase, 1 number).  
+**FR-14.5** The system shall prevent duplicate email addresses during registration.
 
 ---
 

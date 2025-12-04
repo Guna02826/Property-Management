@@ -1,0 +1,232 @@
+Properties:
+
+Buildings
+- Create buildings with name, address, coordinates, and total floors
+- Update building information (name, address, amenities)
+- View buildings with cursor-based pagination
+- Set building-level amenities
+- View occupancy heatmaps at building level
+- View building occupancy and revenue dashboards
+- Track building metrics and export reports (CSV, PDF, Excel)
+- Associate buildings with owner accounts
+- Geospatial search and filtering by location
+- View building details (name, address, floors, amenities, occupancy rate, space counts)
+
+Floors
+- Auto-create floor records (1 to N) when building is created
+- Update floor square footage (total_sqft, common_area_sqft)
+- Calculate net leasable square footage automatically (total_sqft - common_area_sqft)
+- Set floor-level amenities
+- Upload floor plan images
+- View floor-level occupancy heatmaps
+- View floor-level occupancy reports
+- Ensure floor numbers are unique per building
+- Manage floor-specific information and metadata
+
+Spaces
+- Create spaces with square footage, pricing, amenities, and usage type
+- Mark spaces as leasable or non-leasable
+- Update space information and pricing
+- Set space availability status (Available, Occupied, Maintenance, Reserved)
+- Upload images, videos, and 3D models for spaces
+- Set space-level amenities
+- View space-level occupancy heatmaps
+- Search and filter spaces by location, size, price, amenities, and availability
+- Compare multiple spaces side-by-side
+- View space details (name, size, price, location, status, amenities, images)
+- Exclude non-leasable spaces from client search results
+- Validate gross_sqft >= usable_sqft
+- Support usage types (Office, Canteen, Restroom, Storage, Corridor, Janitor, Other)
+
+Units
+- Same as Spaces (units and spaces are synonymous in this system)
+
+Amenities
+- Set amenities for buildings (building-level amenities)
+- Set amenities for floors (floor-level amenities)
+- Set amenities for spaces (space-level amenities)
+- Filter spaces by amenities in search
+- Display amenities in property listings and details
+- Support JSON array format for amenities storage
+
+Floor Plans
+- Upload floor plan images for floors
+- Upload floor plan images for spaces
+- View floor plans in space details
+- Support 3D floor plans and virtual tours
+- Display floor plans in interactive map views
+
+Pricing
+- Set base price (monthly) for spaces
+- Set pricing with AI suggestions
+- Support multi-currency pricing
+- Update pricing for spaces
+- Filter spaces by price range
+- Display pricing in search results and space details
+- Track pricing history and changes
+
+Images
+- Upload images for spaces
+- Set cover image for spaces
+- Display images in space listings and details
+- Support multiple images per space
+- Optimize and lazy-load images
+- Store image URLs in JSONB format
+
+Videos
+- Upload videos for spaces
+- Support property walkthrough videos
+- Display videos in space details
+- Support drone view videos (optional)
+- Store video URLs in JSONB format
+
+3D Models
+- Upload 3D models for spaces
+- Support AR/VR virtual tours with 3D models
+- Display 3D models in space details
+- Integrate with virtual tour functionality
+
+Virtual Tours
+- Conduct virtual tours for spaces
+- Schedule virtual tour viewings
+- View virtual tours and 3D floor plans
+- Support AR/VR virtual tour experiences
+- Integrate with 3D models and floor plans
+
+Location
+- Set building location with address and coordinates
+- Geospatial search by location
+- Display spaces on interactive map with property markers
+- Calculate commute time from location
+- Show nearby amenities and places
+- Support map integration (Google Maps, Mapbox)
+
+Address
+- Store structured address (street, city, state, country, postal_code)
+- Update building address
+- Validate address format
+- Display address in building and space details
+- Support address-based search and filtering
+
+Coordinates
+- Store latitude and longitude for buildings
+- Enable geospatial queries and search
+- Calculate distances between properties
+- Display properties on map using coordinates
+- Support location-based recommendations
+
+Availability Status
+- Set space availability status (Available, Occupied, Maintenance, Reserved)
+- Filter spaces by availability status
+- Update availability status for spaces
+- Track availability changes with audit trail
+- Exclude non-available spaces from search (when appropriate)
+
+Usage Types
+- Define space usage types (Office, Canteen, Restroom, Storage, Corridor, Janitor, Other)
+- Filter spaces by usage type
+- Mark spaces as leasable or non-leasable based on usage type
+- Support non-leasable spaces in floor planning
+
+Square Footage
+- Set gross square footage for spaces
+- Set usable square footage for spaces
+- Set total square footage for floors
+- Set common area square footage for floors
+- Calculate net leasable square footage automatically
+- Validate usable_sqft <= gross_sqft
+- Filter spaces by square footage range
+- Display square footage in space details
+
+Occupancy Metrics
+- Track occupancy rates at building level
+- Track occupancy rates at floor level
+- Track occupancy rates at space level
+- Monitor occupancy and utilization metrics
+- Display occupancy in dashboards and reports
+- Calculate occupancy percentages automatically
+
+Occupancy Heatmaps
+- View occupancy heatmaps at building level
+- View occupancy heatmaps at floor level
+- View occupancy heatmaps at space level
+- Visualize occupancy data in interactive heatmaps
+- Display heatmaps in dashboards
+
+Reviews
+- Rate and review spaces
+- View space reviews and ratings
+- Display average ratings for spaces
+- Filter spaces by rating
+- Support review moderation
+
+Ratings
+- Rate spaces (numeric rating)
+- Display average ratings for spaces
+- Filter spaces by minimum rating
+- Track rating history
+- Calculate rating statistics
+
+Bids
+- Place bids on available spaces
+- Approve, reject, or counter bids on spaces
+- Track bid status (Pending, Approved, Rejected, Counter-Offered, Withdrawn)
+- View active bids and bid history
+- Receive real-time bid notifications via WebSocket
+- Prevent duplicate bids from same client on same space
+- Auto-generate lease documents from approved bids
+- View bid details and notes
+
+Leases
+- Auto-generate lease documents from approved bids
+- View lease documents and contracts
+- Download lease documents
+- Track lease status (Draft, Pending Signature, Active, Expired, Terminated)
+- Send lease expiration reminders (30, 60, 90 days before expiry)
+- Support lease renewal workflow
+- Maintain lease versioning and audit logs
+
+Contracts
+- Generate contracts (lease, rental, sale types)
+- Support multi-party approval workflows
+- Integrate with e-signature platforms (DocuSign, Adobe Sign)
+- Track contract status and milestones
+- Maintain contract versioning
+- Store contract URLs and documents
+- View contract history
+
+Service Requests
+- Create service requests for maintenance
+- Track service requests and escalations
+- Assign service requests to vendors
+- Update service request status
+- View service request history
+- Coordinate maintenance and service requests
+
+Maintenance
+- Coordinate maintenance activities
+- Track maintenance schedules
+- Manage space availability during maintenance
+- Set space status to Maintenance
+- Coordinate vendors and contractors for maintenance
+- Track maintenance history and records
+
+Payment Schedules
+- Generate payment schedules based on lease terms
+- Support EMI/installment plans
+- Track payment status (Scheduled, Due, Paid, Overdue, Cancelled)
+- View payment schedules for contracts
+- Record external payments (bank transfer, cheque, external gateway)
+- Auto-update payment status (Scheduled → Due → Overdue)
+- Send payment due and overdue reminders
+- Track installment numbers and total installments
+
+Reports
+- Generate occupancy reports (building, floor, space levels)
+- Generate revenue reports
+- Generate bid statistics reports
+- Generate operational reports
+- Generate sales reports
+- Export reports in CSV, PDF, Excel formats
+- Filter reports by building, date range, status
+- View support metrics and reports

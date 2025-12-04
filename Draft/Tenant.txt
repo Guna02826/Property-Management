@@ -1,0 +1,211 @@
+Tenants / Residents:
+
+Profiles
+- Register with email, password, name, role, and phone number
+- View and update profile information (name, phone, company details)
+- Email verification required before login
+- Two-factor authentication support (FaceID/TouchID, OTP)
+- Password reset via email
+- View profile activity tracking
+- Update notification preferences
+- Manage account settings and security
+- View last login information
+- Track failed login attempts and account lock status
+- Profile information visible to authorized roles (with permissions)
+- Support for company/organization details in profile
+
+Leases
+- View lease documents and contracts
+- Download lease documents
+- Track lease status (Draft, Pending Signature, Active, Expired, Terminated)
+- Receive lease expiration reminders (30, 60, 90 days before expiry)
+- Support lease renewal workflow
+- View lease terms and conditions
+- Access lease version history
+- View active leases and lease history
+- Receive notifications for lease milestones
+- Support lease, rental, and sale contract types
+- View lease start and end dates
+- Track lease-related documents and attachments
+
+Contracts
+- View contract documents
+- Download contracts and documents
+- Track contract status and milestones
+- Support multi-party approval workflows
+- E-signature integration (DocuSign, Adobe Sign)
+- View contract versioning and history
+- Receive contract status change notifications
+- View contract details (space, terms, pricing, dates)
+- Access contract URLs and stored documents
+- Track contract-related activities
+
+Documents
+- Download contracts and documents
+- Download invoices and receipts
+- View document versioning
+- Secure document storage
+- Access e-signed documents
+- View document history and audit trail
+- Support multiple document formats (PDF, images)
+- Document access control and permissions
+- View document metadata (created date, version, type)
+- Download property-related documents
+
+Communication History
+- View in-app messaging history
+- Track communication with owners, brokers, and support
+- View message threads and conversations
+- Receive and send messages within the platform
+- View communication timestamps and participants
+- Track communication status (sent, delivered, read)
+- Access communication metadata
+- View communication history with property managers
+- Track support ticket communications
+- View communication logs and audit trail
+
+Bids
+- Place bids on available spaces
+- Track bid status (Pending, Approved, Rejected, Counter-Offered, Withdrawn)
+- View active bids and bid history
+- Receive real-time bid notifications via WebSocket
+- View bid details (amount, space, timestamp, status)
+- Accept or reject counter-offers
+- Withdraw bids if needed
+- View bid notes and comments from owners
+- Track bid success probability scores (AI-powered)
+- Receive AI-suggested bid strategies
+- View bid history with cursor-based pagination
+- Prevent duplicate bids on same space
+
+Payment Schedules
+- View payment schedules for active leases
+- Track payment status (Scheduled, Due, Paid, Overdue, Cancelled)
+- View upcoming payment schedule (next 3 payments)
+- Receive payment due and overdue reminders
+- View payment installment details (installment number, total installments)
+- Track payment amounts and due dates
+- View payment history
+- Support EMI/installment plans
+- View multi-currency payment tracking
+- Track payment method (bank transfer, cheque, external gateway)
+
+Payments
+- Record external payments (bank transfer, cheque, external gateway)
+- View payment records and history
+- Download invoices and receipts
+- Track payment dates (due_date, paid_date)
+- View payment amounts and currency
+- Receive payment confirmation notifications
+- View payment status updates
+- Track payment-related documents
+- View payment schedule for contracts
+- Support payment tracking for multiple contracts
+
+Invoices
+- Download invoices automatically generated from payments
+- View invoice details (space, amount, due date, payment method)
+- Access invoice URLs
+- View invoice history
+- Receive invoice notifications
+- Track invoice status
+- View invoice metadata and timestamps
+- Support multi-currency invoices
+- Download invoices in PDF format
+
+Receipts
+- Download receipts for recorded payments
+- View receipt details (payment amount, date, method)
+- Access receipt URLs
+- View receipt history
+- Receive receipt notifications
+- Track receipt generation
+- View receipt metadata
+- Support multi-currency receipts
+- Download receipts in PDF format
+
+Reviews
+- Rate and review spaces
+- View own reviews and ratings
+- Edit or update reviews (if allowed)
+- View review history
+- Track review status
+- View average ratings for spaces
+- Filter spaces by rating
+- View review moderation status
+
+Ratings
+- Rate spaces with numeric rating
+- View own ratings history
+- View average ratings for spaces
+- Filter spaces by minimum rating
+- Track rating statistics
+- View rating distribution
+- Support rating updates (if allowed)
+
+Notifications
+- Receive notifications for bid updates
+- Receive notifications for lease milestones
+- Receive notifications for payment events
+- Receive notifications via email, WhatsApp, push, and in-app channels
+- View all notifications with cursor-based pagination
+- Mark notifications as read and unread
+- Mark all notifications as read
+- View unread notification count
+- Configure notification preferences
+- Receive real-time notifications via WebSocket
+- View notification history
+- Filter notifications by type
+
+Activity Tracking
+- View profile activity history
+- Track login history and sessions
+- View activity logs for bids, leases, payments
+- Track document access history
+- View activity timestamps
+- Track activity by resource type
+- View activity audit trail
+- Access activity metadata
+
+Service Requests
+- Create service requests for maintenance
+- Track service request status
+- View service request history
+- Receive service request updates
+- View assigned vendors and contractors
+- Track service request escalations
+- View service request details and notes
+- Receive service request notifications
+- View service request timeline
+
+Applications
+- Submit lease applications
+- Track application status
+- View application history
+- Receive application updates
+- View application details
+- Track application processing
+- Receive application notifications
+- View application documents
+
+Dashboards
+- View client dashboard with active bids
+- View pending and active leases
+- View upcoming payment schedule (next 3)
+- View lease expiration alerts (30/60/90 days)
+- Receive AI-powered space recommendations
+- View recent notifications
+- Track dashboard metrics
+- View personalized dashboard data
+
+Search & Discovery
+- Search and filter spaces by location, size, price, amenities, and availability
+- View spaces on interactive map with property markers
+- Compare multiple spaces side-by-side
+- View virtual tours and 3D floor plans
+- Receive AI-powered space recommendations
+- Filter spaces by building, floor, square footage, price range, and amenities
+- View space details and information
+- Save favorite spaces
+- View search history
+
