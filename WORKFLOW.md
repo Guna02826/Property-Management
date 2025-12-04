@@ -50,9 +50,22 @@ End-to-end workflow of the Enterprise Multi-Floor Commercial Office Leasing Plat
    - Upload media (photos, 3D models, virtual tours)
    - Bulk import via CSV/Excel
 
+### Manager registration
+1. Account creation with manager credentials
+2. Hierarchy enforcement: Manager must be assigned to Owner
+3. Profile: company affiliation, operational scope
+
+### Assistant Manager registration (optional)
+1. Account creation with assistant manager credentials
+2. Hierarchy enforcement: Assistant Manager must be assigned to Manager (created based on Owner or Manager's need)
+3. Profile: company affiliation, operational scope
+4. Note: Assistant Manager is optional - only created when needed by Owner or Manager
+
 ### Sales Rep/Broker registration
 1. Account creation with broker credentials
-2. Hierarchy enforcement: if Manager exists, Sales Rep must be assigned to a Manager
+2. Hierarchy enforcement: 
+   - If Assistant Manager exists: Sales Rep must be assigned to Assistant Manager
+   - If Assistant Manager does not exist: Sales Rep must be assigned directly to Manager
 3. Profile: company affiliation, specializations, commission structure
 
 ---
@@ -80,7 +93,7 @@ End-to-end workflow of the Enterprise Multi-Floor Commercial Office Leasing Plat
    - Select date/time
    - Conflict detection (prevents overlapping visits same day)
    - Visit types: PRIVATE, GROUP, VIRTUAL
-   - Notifications to client, sales rep, manager (if hierarchy requires)
+   - Notifications to client, sales rep, assistant manager/manager (if hierarchy requires)
 
 5. Space comparison
    - Side-by-side comparison
@@ -198,31 +211,59 @@ End-to-end workflow of the Enterprise Multi-Floor Commercial Office Leasing Plat
 
 ## Role hierarchy and management workflows
 
+### Hierarchy Structure
+```
+OWNER
+  └── MANAGER
+      ├── ASSISTANT_MANAGER (optional, based on Owner or Manager's need)
+      │   └── SALES_REP (if Assistant Manager exists)
+      └── SALES_REP (if no Assistant Manager)
+```
+
 ### Manager workflow
 1. Team oversight
-   - View subordinate activities (Sales Reps, Assistant Managers)
+   - View subordinate activities (Assistant Managers and Sales Reps)
    - Approve visits (if hierarchy requires)
    - Monitor team performance
+   - Optionally create Assistant Manager based on operational needs
 
 2. Visit management
-   - View/manage subordinate visits
+   - View/manage subordinate visits (direct Sales Reps and via Assistant Managers)
    - Approve visit bookings (if configured)
    - Track team visit statistics
 
 3. Performance monitoring
-   - Team metrics: visits, bids, conversions
-   - Dashboard with subordinate activities
+   - Team metrics: visits, bids, conversions (including Assistant Manager teams)
+   - Dashboard with subordinate activities (direct and indirect)
+
+### Assistant Manager workflow (when exists)
+1. Team oversight
+   - View subordinate Sales Rep activities
+   - Approve visits (if hierarchy requires)
+   - Monitor Sales Rep team performance
+   - Report to Manager
+
+2. Visit management
+   - View/manage subordinate Sales Rep visits
+   - Approve visit bookings (if configured)
+   - Track Sales Rep team visit statistics
+
+3. Performance monitoring
+   - Sales Rep team metrics: visits, bids, conversions
+   - Dashboard with subordinate Sales Rep activities
 
 ### Sales Rep workflow
 1. Lead management
    - Receive assigned leads
    - Track lead status: New → Contacted → Qualified → Viewing → Bidding → Closed
+   - Report to Assistant Manager (if exists) or Manager (if no Assistant Manager)
 
 2. Visit management
    - Book visits for clients
    - Conflict detection enforced
    - Manage assigned visits calendar
    - Status updates: SCHEDULED → CONFIRMED → COMPLETED
+   - Approval required from Assistant Manager or Manager (if hierarchy requires)
 
 3. Client communication
    - In-app messaging, email, meeting scheduling
@@ -344,3 +385,4 @@ Visit Management → Deal Facilitation → Commission Tracking
 - Automated workflows: Lease generation, payment reminders, renewal notifications
 
 This workflow covers the lifecycle from initial setup through ongoing operations, with automation, real-time updates, and role-based access control.
+

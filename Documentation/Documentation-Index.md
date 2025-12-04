@@ -13,8 +13,8 @@ This document provides an index of all documentation files in the project.
 
 ## 🎯 Core Requirements Documents
 
-### Final Requirements/
-**Location:** `Final Requirements/`
+### Requirements/
+**Location:** `Requirements/`
 
 1. **SRS-Complete.md**
    - **Purpose:** Complete Software Requirements Specification

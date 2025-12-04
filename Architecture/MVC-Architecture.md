@@ -4,7 +4,7 @@
 **Scope:** High-level responsibilities and main components for web application  
 **Version:** 1.0  
 **Date:** 2025-12-02  
-**Related Documents:** [Software Requirements Specification](../Final%20Requirements/SRS-Complete.md), [Application Workflow](./Application-Workflow.md)
+**Related Documents:** [Software Requirements Specification](../Requirements/SRS-Complete.md), [Application Workflow](./Application-Workflow.md)
 
 ---
 
@@ -164,15 +164,17 @@ This document describes the primary MVC components required to support the core 
 - **RoleHierarchyConfigModel**
   - Fields: `id`, `organizationId`, `parentRole`, `childRole`, `isEnabled`, `requiresApproval`, `createdAt`, `updatedAt`, `createdBy`, `updatedBy`.
   - Responsibilities:
-    - Store configurable role hierarchy rules (e.g., Manager oversees Sales Rep).
+    - Store configurable role hierarchy rules (Owner → Manager → Assistant Manager (optional) → Sales Rep).
     - Enable/disable hierarchy per organization.
     - Define approval requirements for hierarchical actions.
+    - Support conditional hierarchy logic (Sales Rep reports to Assistant Manager when exists, otherwise to Manager).
   - Why this design:
     - Flexible hierarchy system that can be configured per organization.
-    - Supports business rules like "Sales Rep must be overseen by Manager when Manager exists".
+    - Supports cost-effective hierarchy where Assistant Manager is optional and only created when needed.
+    - Implements conditional logic: Sales Rep reports to Assistant Manager if exists, otherwise to Manager.
   - Where used:
     - `AdminController` for hierarchy configuration.
-    - User creation/assignment logic to enforce hierarchy rules.
+    - User creation/assignment logic to enforce hierarchy rules with conditional parent determination.
     - Authorization checks for hierarchical permissions.
 
 - **UserRoleHierarchyModel**
@@ -185,9 +187,9 @@ This document describes the primary MVC components required to support the core 
     - Implements the hierarchy defined in `RoleHierarchyConfigModel` at the user level.
     - Allows dynamic assignment and reassignment of hierarchical relationships.
   - Where used:
-    - User management workflows for assigning managers to sales reps.
-    - Authorization checks to determine oversight relationships.
-    - Manager dashboards for viewing subordinates.
+    - User management workflows for assigning parents to sales reps (Assistant Manager or Manager based on existence).
+    - Authorization checks to determine oversight relationships (supports conditional hierarchy).
+    - Manager and Assistant Manager dashboards for viewing subordinates.
 
 - **AuditLogModel**
   - Fields: `id`, `actorId`, `actionType`, `entityType`, `entityId`, `metadata`, `createdAt`.
@@ -326,7 +328,7 @@ This document describes the primary MVC components required to support the core 
 - **VisitController**
   - Endpoints:
     - `POST /spaces/{id}/visits` – create private visit booking (client or sales rep).
-    - `GET /visits` – list visits (filtered by role: client sees own visits, sales rep sees assigned visits, manager sees subordinate visits).
+    - `GET /visits` – list visits (filtered by role: client sees own visits, sales rep sees assigned visits, assistant manager/manager sees subordinate visits).
     - `GET /visits/{id}` – visit details.
     - `PATCH /visits/{id}` – update visit (status, time, notes).
     - `POST /visits/{id}/cancel` – cancel visit.
@@ -899,6 +901,6 @@ try {
 
 **Document Version:** 1.0  
 **Last Updated:** 2025-12-02  
-**Related Documents:** [Software Requirements Specification](../Final%20Requirements/SRS-Complete.md), [Application Workflow](./Application-Workflow.md)
+**Related Documents:** [Software Requirements Specification](../Requirements/SRS-Complete.md), [Application Workflow](./Application-Workflow.md)
 
 

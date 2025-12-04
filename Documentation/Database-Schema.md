@@ -435,10 +435,18 @@ CREATE TABLE role_hierarchy_config (
 - `idx_role_hierarchy_config_enabled` on `(is_enabled, parent_role, child_role)`
 
 **Default Hierarchy Rules:**
-- If Manager role exists, Sales Rep must be overseen by Manager
-- Assistant Manager reports to Manager
-- Manager reports to Owner
+- Owner → Manager: Manager reports to Owner (mandatory when Owner exists)
+- Manager → Assistant Manager: Assistant Manager reports to Manager (optional - created based on Owner or Manager's need)
+- Assistant Manager → Sales Rep: Sales Rep reports to Assistant Manager when Assistant Manager exists (conditional)
+- Manager → Sales Rep: Sales Rep reports directly to Manager when no Assistant Manager exists (conditional)
 - Hierarchy can be enabled/disabled per organization
+
+**Conditional Hierarchy Logic:**
+The system implements conditional hierarchy for Sales Rep team reporting:
+- If Assistant Manager exists: Sales Rep team reports to Assistant Manager
+- If Assistant Manager does not exist: Sales Rep team reports directly to Manager
+
+This ensures cost-effective hierarchy where Assistant Manager is optional and only created when needed, avoiding unnecessary overhead.
 
 ### 3.11 user_role_hierarchy
 

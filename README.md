@@ -38,8 +38,8 @@ This platform streamlines commercial real estate transactions from space discove
 ## 📚 Documentation
 
 ### Core Documentation
-- **[SRS (Software Requirements Specification)](./Final%20Requirements/SRS-Complete.md)** - Complete requirements and specifications
-- **[Technical Implementation Details](./Final%20Requirements/Technical-Implementation-Details.md)** - Technical architecture and implementation guide
+- **[SRS (Software Requirements Specification)](./Requirements/SRS-Complete.md)** - Complete requirements and specifications
+- **[Technical Implementation Details](./Requirements/Technical-Implementation-Details.md)** - Technical architecture and implementation guide
 
 ### Architecture Documentation
 - **[MVC Architecture](./Architecture/MVC-Architecture.md)** - MVC patterns and implementation guidelines
@@ -93,7 +93,7 @@ property-manager/
 ├── Architecture/                # Architecture and design documents
 │   ├── MVC-Architecture.md      # MVC architecture patterns
 │   └── Application-Workflow.md  # End-to-end workflow documentation
-├── Final Requirements/           # Official requirements documents
+├── Requirements/                 # Official requirements documents
 │   ├── SRS-Complete.md          # Software Requirements Specification
 │   └── Technical-Implementation-Details.md  # Technical specifications
 ├── Documentation/               # Development and reference documentation

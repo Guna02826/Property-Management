@@ -15,9 +15,11 @@
 3. [Users & Roles](#3-users--roles)
 4. [Functional Requirements](#4-functional-requirements)
 5. [Non-Functional Requirements](#5-non-functional-requirements)
-6. [Assumptions & Constraints](#6-assumptions--constraints)
-7. [Acceptance Criteria](#7-acceptance-criteria)
-8. [System Architecture](#8-system-architecture)
+6. [Data Specifications](#6-data-specifications)
+7. [Interface Requirements](#7-interface-requirements)
+8. [Assumptions & Constraints](#8-assumptions--constraints)
+9. [Acceptance Criteria](#9-acceptance-criteria)
+10. [System Architecture](#10-system-architecture)
 
 ---
 
@@ -151,13 +153,13 @@ Search and lease office spaces. Capabilities: search/filter spaces, map view, sp
 Manage property portfolio and maximize occupancy/revenue. Capabilities: manage buildings/floors/spaces (bulk operations), set pricing with AI suggestions, view occupancy/revenue dashboards and heatmaps, approve/reject/counter bids, auto-generate leases, track metrics, delegate permissions, export reports.
 
 #### Sales Representative / Broker
-Manage client relationships and facilitate deals. Capabilities: manage leads and pipeline, conduct virtual tours, in-app messaging, process applications, track commissions, CRM tools, schedule private visits with conflict detection, manage assigned visits. Note: Must be overseen by Manager when Manager role exists (enforced by configurable role hierarchy).
+Manage client relationships and facilitate deals. Capabilities: manage leads and pipeline, conduct virtual tours, in-app messaging, process applications, track commissions, CRM tools, schedule private visits with conflict detection, manage assigned visits. Note: Reports to Assistant Manager when Assistant Manager exists, otherwise reports directly to Manager (enforced by configurable role hierarchy).
 
 #### Manager (Property Manager)
-Oversee day-to-day building operations and sales team. Capabilities: coordinate maintenance, manage tenant relationships, track service requests, monitor occupancy/utilization, coordinate vendors, oversee Sales Reps and Assistant Managers, approve visits (if hierarchy requires), view team performance metrics, manage visit schedules for subordinates.
+Oversee day-to-day building operations and sales team. Capabilities: coordinate maintenance, manage tenant relationships, track service requests, monitor occupancy/utilization, coordinate vendors, oversee Sales Reps and Assistant Managers, approve visits (if hierarchy requires), view team performance metrics, manage visit schedules for subordinates. Reports to Owner. Can optionally create Assistant Manager based on operational needs.
 
 #### Assistant Manager
-Assist Property Manager with day-to-day operations. Capabilities: manage service requests (limited authority), view occupancy and utilization metrics, coordinate vendors (with manager approval), access building and space information (read-only for sensitive data), generate operational reports (limited scope). Reports to Manager.
+Assist Property Manager with day-to-day operations. Capabilities: manage service requests (limited authority), view occupancy and utilization metrics, coordinate vendors (with manager approval), access building and space information (read-only for sensitive data), generate operational reports (limited scope). Reports to Manager. Optional role created based on Owner or Manager's need. When exists, oversees Sales Rep team directly; when not present, Sales Rep team reports to Manager.
 
 #### Support / Agent
 Assist users with inquiries and issues. Capabilities: client support, limited data access, manage communications and escalations, track tasks, view support metrics.
@@ -234,12 +236,12 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 ### 4.6 Role Hierarchy & Management
 
 **FR-5.13** The system shall support configurable role hierarchy relationships.  
-**FR-5.14** The system shall enforce that Sales Rep must be overseen by Manager when Manager role exists in the organization.  
+**FR-5.14** The system shall enforce hierarchical reporting structure: Owner → Manager → Assistant Manager (optional) → Sales Rep. Manager must always report to Owner. Assistant Manager is optional and reports to Manager when created. Sales Rep team reports to Assistant Manager when Assistant Manager exists, otherwise reports directly to Manager.  
 **FR-5.15** The system shall allow enabling or disabling hierarchy rules per organization.  
-**FR-5.16** The system shall support hierarchical approval workflows (e.g., Sales Rep actions requiring Manager approval).  
-**FR-5.17** The system shall allow managers to view and manage activities of subordinate team members (Sales Reps, Assistant Managers).  
+**FR-5.16** The system shall support hierarchical approval workflows (e.g., Sales Rep actions requiring Manager or Assistant Manager approval based on hierarchy).  
+**FR-5.17** The system shall allow managers and assistant managers to view and manage activities of subordinate team members (Sales Reps). Managers can view all subordinates including Assistant Managers and their Sales Rep teams.  
 **FR-5.18** The system shall track hierarchical relationships between users in the `user_role_hierarchy` table.  
-**FR-5.19** The system shall validate hierarchy rules when creating or assigning users to roles.
+**FR-5.19** The system shall validate hierarchy rules when creating or assigning users to roles, implementing conditional logic to determine correct parent based on Assistant Manager existence.
 
 ### 4.7 Bidding & Negotiation
 
@@ -436,9 +438,454 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 
 ---
 
-## 6. Assumptions & Constraints
+## 6. Data Specifications
 
-### 6.1 Technical Constraints
+### 6.1 Database Overview
+
+The system shall use PostgreSQL 14+ as the primary database with the following specifications:
+
+- **Database Engine:** PostgreSQL 14+
+- **Character Set:** UTF-8
+- **Collation:** en_US.UTF-8
+- **Primary Keys:** UUID (gen_random_uuid())
+- **Timestamps:** TIMESTAMP WITH TIME ZONE (UTC)
+- **Normalization:** Third Normal Form (3NF)
+- **Audit Trail:** All tables include `created_at`, `updated_at`, `created_by`, `updated_by` fields
+
+### 6.2 Core Data Entities
+
+The system shall maintain the following core data entities:
+
+#### 6.2.1 Users
+
+**DS-1.1** The system shall store user accounts with the following attributes:
+- Unique identifier (UUID)
+- Email address (unique, RFC 5322 compliant)
+- Password hash (encrypted)
+- Name, phone number
+- Role (SUPER_ADMIN, OWNER, CLIENT, BROKER, AGENT, SUPPORT, MANAGER, ASSISTANT_MANAGER, SALES_REP)
+- Email verification status
+- Two-factor authentication settings
+- Account lock status and failed login attempts
+
+#### 6.2.2 Buildings
+
+**DS-1.2** The system shall store building information with:
+- Unique identifier (UUID)
+- Owner reference (foreign key to users)
+- Name, address (structured JSONB: street, city, state, country, postal_code)
+- Geographic coordinates (latitude, longitude)
+- Total floors count
+- Amenities (JSONB array)
+
+#### 6.2.3 Floors
+
+**DS-1.3** The system shall automatically create floor records when a building is created:
+- Unique identifier (UUID)
+- Building reference (foreign key, CASCADE delete)
+- Floor number (unique per building)
+- Total square footage, common area square footage
+- Net leasable square footage (calculated: total - common area)
+- Amenities and floor plan URL
+
+#### 6.2.4 Spaces
+
+**DS-1.4** The system shall store individual spaces within floors with:
+- Unique identifier (UUID)
+- Floor reference (foreign key, CASCADE delete)
+- Name, gross square footage, usable square footage
+- Usage type (OFFICE, CANTEEN, RESTROOM, STORAGE, CORRIDOR, JANITOR, OTHER)
+- Leasable flag (boolean)
+- Base price (monthly), currency
+- Availability status (AVAILABLE, OCCUPIED, MAINTENANCE, RESERVED)
+- Amenities, images (JSONB arrays)
+- Constraint: usable_sqft <= gross_sqft
+
+#### 6.2.5 Bids
+
+**DS-1.5** The system shall store bids placed by clients with:
+- Unique identifier (UUID)
+- Space reference, client reference (foreign keys)
+- Bid amount (positive decimal)
+- Status (PENDING, APPROVED, REJECTED, COUNTER_OFFERED, WITHDRAWN)
+- Counter offer amount (optional)
+- Notes, timestamps
+- Constraint: Only one pending bid per client per space
+
+#### 6.2.6 Contracts
+
+**DS-1.6** The system shall store lease, rental, and sale contracts with:
+- Unique identifier (UUID)
+- Bid reference (optional), space reference, client reference, owner reference
+- Contract type (LEASE, RENTAL, SALE)
+- Start date, end date (nullable for SALE)
+- Status (DRAFT, PENDING_SIGNATURE, ACTIVE, EXPIRED, TERMINATED)
+- Contract document URL
+- Version number
+- Constraint: Only one active contract per space
+
+#### 6.2.7 Payments
+
+**DS-1.7** The system shall store payment schedules and records with:
+- Unique identifier (UUID)
+- Contract reference, payer reference (foreign keys)
+- Amount, currency
+- Due date, paid date (optional)
+- Installment number, total installments
+- Status (SCHEDULED, DUE, PAID, OVERDUE, CANCELLED)
+- External payment reference (optional)
+- Invoice/receipt URLs
+
+#### 6.2.8 Private Visits
+
+**DS-1.8** The system shall store private visit bookings with:
+- Unique identifier (UUID)
+- Space reference, client reference, sales representative reference (foreign keys)
+- Visit date, start time, end time
+- Visit type (PRIVATE, GROUP, VIRTUAL)
+- Status (SCHEDULED, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW)
+- Notes
+- Constraint: No overlapping visits for same space on same date
+
+#### 6.2.9 Role Hierarchy Configuration
+
+**DS-1.9** The system shall store configurable role hierarchy rules with:
+- Unique identifier (UUID)
+- Organization identifier (NULL for global config)
+- Parent role, child role
+- Enabled flag, requires approval flag
+
+#### 6.2.10 User Role Hierarchy
+
+**DS-1.10** The system shall store actual hierarchical relationships between users with:
+- Unique identifier (UUID)
+- Parent user reference, child user reference (foreign keys)
+- Hierarchy configuration reference
+- Active status flag
+- Constraint: Parent and child cannot be the same user
+
+#### 6.2.11 Notifications
+
+**DS-1.11** The system shall store notifications with:
+- Unique identifier (UUID)
+- User reference (foreign key, CASCADE delete)
+- Notification type, channel
+- Title, message, metadata (JSONB)
+- Read status, read timestamp
+- Priority level
+
+#### 6.2.12 Audit Logs
+
+**DS-1.12** The system shall maintain audit logs for all system actions with:
+- Unique identifier (UUID)
+- User reference (optional, SET NULL on delete)
+- Action type, resource type, resource identifier
+- IP address, user agent
+- Request body, response status (JSONB)
+- Timestamp
+
+### 6.3 Data Relationships
+
+**DS-2.1** The system shall maintain the following primary relationships:
+
+| Parent Entity | Child Entity | Relationship Type | Delete Rule |
+|--------------|--------------|-------------------|-------------|
+| Users | Buildings | 1:N | RESTRICT |
+| Buildings | Floors | 1:N | CASCADE |
+| Floors | Spaces | 1:N | CASCADE |
+| Spaces | Bids | 1:N | RESTRICT |
+| Spaces | Contracts | 1:N | RESTRICT |
+| Spaces | Private Visits | 1:N | RESTRICT |
+| Contracts | Payments | 1:N | RESTRICT |
+| Users | Notifications | 1:N | CASCADE |
+| Users | Audit Logs | 1:N | SET NULL |
+| Users | User Role Hierarchy (parent/child) | 1:N | CASCADE |
+
+### 6.4 Data Constraints
+
+**DS-3.1** The system shall enforce the following check constraints:
+- User roles must be valid enum values
+- Building total floors must be positive
+- Floor numbers must be unique per building
+- Space usable square footage must be <= gross square footage
+- Bid amounts must be positive
+- Contract end date must be > start date (if provided)
+- Payment installment numbers must be valid (1 to total_installments)
+- Visit end time must be > start time
+
+**DS-3.2** The system shall enforce the following unique constraints:
+- User email addresses must be unique
+- One pending bid per client per space
+- One active contract per space
+- Unique parent-child role hierarchy relationships
+
+**DS-3.3** The system shall enforce referential integrity through foreign key constraints with appropriate cascade rules:
+- RESTRICT: Prevents deletion if child records exist (buildings, spaces, contracts)
+- CASCADE: Deletes child records when parent is deleted (floors, spaces, notifications)
+- SET NULL: Sets foreign key to NULL (audit_logs.user_id)
+
+### 6.5 Data Validation Rules
+
+**DS-4.1** The system shall validate:
+- Email format: RFC 5322 compliant
+- Password strength: Minimum 8 characters, 1 uppercase, 1 lowercase, 1 number
+- Square footage: Positive decimal values
+- Dates: Valid date ranges (end_date > start_date)
+- Monetary amounts: Positive decimal values with appropriate precision
+- Geographic coordinates: Valid latitude (-90 to 90) and longitude (-180 to 180)
+
+### 6.6 Data Storage Requirements
+
+**DS-5.1** The system shall support:
+- JSONB fields for flexible structured data (addresses, amenities, metadata)
+- Array storage for multiple values (amenities, images)
+- File URL storage for documents, images, and floor plans
+- Multi-currency support with ISO 4217 currency codes
+
+### 6.7 Indexing Strategy
+
+**DS-6.1** The system shall maintain indexes on:
+- Primary keys (automatic UUID indexes)
+- Foreign keys for join performance
+- Searchable fields (email, role, status, availability)
+- Composite indexes for common query patterns
+- Conditional indexes for filtered queries (e.g., leasable spaces only)
+
+**Note:** For detailed database schema, table definitions, and implementation specifics, refer to [Database Schema Documentation](../Documentation/Database-Schema.md).
+
+---
+
+## 7. Interface Requirements
+
+### 7.1 API Interface Requirements
+
+#### 7.1.1 API Base Configuration
+
+**IR-1.1** The system shall provide a RESTful API with the following base configuration:
+- Base URL: `https://api.example.com/api/v1`
+- Content-Type: `application/json`
+- Authentication via Bearer tokens in Authorization header
+- Support for refresh tokens via custom header
+
+**IR-1.2** The system shall use standard HTTP status codes:
+- `200` - Success
+- `201` - Created
+- `400` - Bad Request (validation error)
+- `401` - Unauthorized
+- `403` - Forbidden
+- `404` - Not Found
+- `429` - Too Many Requests (rate limited)
+- `500` - Internal Server Error
+- `503` - Service Unavailable
+
+**IR-1.3** The system shall implement cursor-based pagination for all list endpoints:
+- Query parameters: `?cursor={cursor}&limit={limit}`
+- Default limit: 20 records
+- Maximum limit: 100 records
+- Response format: `{ data: [...], meta: { cursor, has_more, total? } }`
+
+#### 7.1.2 Authentication Endpoints
+
+**IR-2.1** The system shall provide the following authentication endpoints:
+- `POST /api/v1/auth/register` - Register new user account
+- `POST /api/v1/auth/login` - Authenticate user and receive tokens
+- `POST /api/v1/auth/refresh` - Refresh access token
+- `POST /api/v1/auth/password-reset` - Request password reset email
+- `POST /api/v1/auth/password-reset/confirm` - Confirm password reset with token
+
+**IR-2.2** Authentication endpoints shall:
+- Accept email and password for login
+- Return JWT access token and refresh token
+- Validate email format (RFC 5322)
+- Enforce password strength requirements
+- Lock accounts after 5 failed login attempts (15 minutes)
+
+#### 7.1.3 Building Management Endpoints
+
+**IR-3.1** The system shall provide endpoints for building management:
+- `GET /api/v1/buildings` - List buildings (paginated)
+- `GET /api/v1/buildings/:id` - Get building details
+- `POST /api/v1/buildings` - Create new building (Owner only)
+- `PUT /api/v1/buildings/:id` - Update building (Owner only)
+- `DELETE /api/v1/buildings/:id` - Delete building (Owner only, with restrictions)
+
+#### 7.1.4 Space Management Endpoints
+
+**IR-4.1** The system shall provide endpoints for space management:
+- `GET /api/v1/spaces` - Search and list spaces (paginated, filters)
+- `GET /api/v1/spaces/:id` - Get space details
+- `POST /api/v1/spaces` - Create new space (Owner only)
+- `PUT /api/v1/spaces/:id` - Update space (Owner only)
+- `DELETE /api/v1/spaces/:id` - Delete space (Owner only, with restrictions)
+
+**IR-4.2** Space search endpoints shall support filtering by:
+- Location (city, state, coordinates)
+- Size range (square footage)
+- Price range
+- Amenities
+- Availability status
+- Building or floor
+
+#### 7.1.5 Bidding Endpoints
+
+**IR-5.1** The system shall provide endpoints for bidding:
+- `POST /api/v1/spaces/:id/bids` - Place bid on space (Client only)
+- `GET /api/v1/bids` - List user's bids (paginated)
+- `GET /api/v1/bids/:id` - Get bid details
+- `PUT /api/v1/bids/:id/approve` - Approve bid (Owner only)
+- `PUT /api/v1/bids/:id/reject` - Reject bid (Owner only)
+- `PUT /api/v1/bids/:id/counter` - Make counter offer (Owner only)
+- `PUT /api/v1/bids/:id/withdraw` - Withdraw bid (Client only)
+
+#### 7.1.6 Contract Management Endpoints
+
+**IR-6.1** The system shall provide endpoints for contract management:
+- `GET /api/v1/contracts` - List contracts (role-based filtering)
+- `GET /api/v1/contracts/:id` - Get contract details
+- `GET /api/v1/contracts/:id/document` - Download contract document
+- `POST /api/v1/contracts/:id/sign` - Initiate e-signature process
+
+#### 7.1.7 Payment Tracking Endpoints
+
+**IR-7.1** The system shall provide endpoints for payment tracking:
+- `GET /api/v1/payments` - List payments (paginated, filters)
+- `GET /api/v1/payments/:id` - Get payment details
+- `POST /api/v1/payments` - Record external payment
+- `GET /api/v1/payments/:id/invoice` - Download invoice
+- `GET /api/v1/payments/:id/receipt` - Download receipt
+
+#### 7.1.8 Visit Booking Endpoints
+
+**IR-8.1** The system shall provide endpoints for visit booking:
+- `POST /api/v1/spaces/:id/visits` - Book private visit (Client or Sales Rep)
+- `GET /api/v1/visits` - List visits (role-based filtering, paginated)
+- `GET /api/v1/visits/:id` - Get visit details
+- `PUT /api/v1/visits/:id` - Update visit (authorized roles only)
+- `DELETE /api/v1/visits/:id` - Cancel visit
+- `GET /api/v1/visits/:id/conflicts` - Check for scheduling conflicts
+
+#### 7.1.9 Dashboard Endpoints
+
+**IR-9.1** The system shall provide dashboard endpoints:
+- `GET /api/v1/dashboard/owner` - Owner dashboard data
+- `GET /api/v1/dashboard/client` - Client dashboard data
+- `GET /api/v1/dashboard/manager` - Manager dashboard data
+- `GET /api/v1/dashboard/analytics` - Analytics data (role-based)
+
+#### 7.1.10 WebSocket Interface
+
+**IR-10.1** The system shall provide WebSocket connections for real-time updates:
+- Connection endpoint: `wss://api.example.com/ws`
+- Authentication via token in connection query parameter
+- Support for multiple event types (bid updates, visit confirmations, notifications)
+
+**IR-10.2** WebSocket events shall include:
+- Bid status changes
+- Visit confirmations and reminders
+- Payment notifications
+- Lease milestone notifications
+- Real-time dashboard updates
+
+### 7.2 User Interface Requirements
+
+#### 7.2.1 Web Application Interface
+
+**IR-11.1** The system shall provide a responsive web application interface that:
+- Supports the latest two versions of Chrome, Firefox, Safari, and Edge
+- Provides responsive design for desktop, tablet, and mobile screen sizes
+- Implements Progressive Web App (PWA) capabilities
+- Provides graceful degradation for older browsers
+
+**IR-11.2** The web interface shall include:
+- User authentication pages (login, registration, password reset)
+- Role-based dashboards (Owner, Client, Manager, Sales Rep, etc.)
+- Building and space management interfaces (Owner/Manager)
+- Space search and discovery interface (Client)
+- Bidding and negotiation interface
+- Contract viewing and e-signature integration
+- Payment tracking and invoicing interface
+- Visit booking and management interface
+- Analytics and reporting dashboards
+- Notification center
+
+**IR-11.3** The web interface shall provide:
+- Interactive map view with property markers (Google Maps/Mapbox)
+- Space comparison tool (side-by-side view)
+- Image galleries and virtual tour integration
+- Filter and search controls
+- Export functionality (CSV, PDF, Excel)
+- Real-time updates via WebSocket connections
+
+#### 7.2.2 Mobile Application Interface
+
+**IR-12.1** The system shall provide mobile applications for:
+- iOS 14+ (native or cross-platform)
+- Android 10+ (native or cross-platform)
+
+**IR-12.2** The mobile interface shall support:
+- All core features available in web interface
+- Push notifications (iOS and Android)
+- Biometric authentication (FaceID/TouchID, fingerprint)
+- GPS-based property discovery
+- QR code scanning for property details
+- Offline viewing of previously loaded data (Phase 3+)
+
+#### 7.2.3 User Interface Standards
+
+**IR-13.1** The system shall comply with:
+- WCAG 2.1 Level AA accessibility standards
+- Responsive design principles for all screen sizes
+- Consistent navigation and layout patterns
+- Clear error messages and validation feedback
+- Loading states and progress indicators
+- Context-sensitive help and tooltips
+
+**IR-13.2** The user interface shall support:
+- Multi-language interfaces (initially 10 languages, Phase 3)
+- Cultural localization (date formats, currency formats)
+- Dark mode option (Phase 3)
+- Customizable dashboard layouts (Phase 3)
+
+### 7.3 Integration Interface Requirements
+
+**IR-14.1** The system shall provide integration interfaces for:
+- Email service providers (SMTP, SendGrid, AWS SES)
+- WhatsApp Business API for notifications
+- Mapping services (Google Maps API, Mapbox)
+- E-signature platforms (DocuSign, Adobe Sign)
+- Accounting/ERP systems (QuickBooks, Zoho, SAP) - API-based
+- IoT sensors for smart building features (Phase 4)
+
+**IR-14.2** Integration interfaces shall:
+- Use RESTful APIs or webhooks where applicable
+- Implement OAuth 2.0 for third-party authentication
+- Provide webhook endpoints for real-time notifications
+- Support retry mechanisms and circuit breakers
+- Handle failures gracefully without impacting core functionality
+
+### 7.4 API Documentation Requirements
+
+**IR-15.1** The system shall provide comprehensive API documentation:
+- OpenAPI/Swagger specification for all REST endpoints
+- Request and response examples
+- Authentication requirements
+- Error code reference
+- Rate limiting information
+- Interactive API explorer
+
+**IR-15.2** API documentation shall be:
+- Accessible via web interface
+- Version-controlled alongside code
+- Updated with each API change
+- Available in both human-readable and machine-readable formats
+
+**Note:** For detailed API specifications, endpoint definitions, request/response schemas, and WebSocket event details, refer to [Technical Implementation Details](./Technical-Implementation-Details.md) Section 3: API Specifications.
+
+---
+
+## 8. Assumptions & Constraints
+
+### 8.1 Technical Constraints
 
 - Cloud infrastructure (Google Cloud Run, AWS, or Azure)
 - PostgreSQL 14+, Redis 6+, Node.js 18+ (LTS)
@@ -448,7 +895,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 - Internet connectivity required (no offline mode in Phase 1-2)
 - Payment tracking only (no direct payment processing)
 
-### 6.2 Business Constraints
+### 8.2 Business Constraints
 
 - Budget constraints limit Phase 1 scope
 - Regulatory compliance varies by jurisdiction
@@ -457,7 +904,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 - Multi-language/currency support from Phase 3
 - AR/VR features require compatible devices (Phase 4+)
 
-### 6.3 User Assumptions
+### 8.3 User Assumptions
 
 - Reliable internet connectivity
 - Modern web-standard compatible devices
@@ -466,7 +913,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 - Structured property data available
 - Basic web/mobile application understanding
 
-### 6.4 Data Assumptions
+### 8.4 Data Assumptions
 
 - Property data (buildings, floors, spaces) in structured format
 - Accurate user data during registration
@@ -474,14 +921,14 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 - Geographic coordinates available or geocodable
 - Consistent measurement units (square footage)
 
-### 6.5 Integration Assumptions
+### 8.5 Integration Assumptions
 
 - Third-party services (email, WhatsApp, maps, e-signature) remain available
 - External accounting/ERP systems (QuickBooks, Zoho, SAP) support API integration
 - Payment gateways maintain API compatibility
 - IoT sensors provide standardized data formats
 
-### 6.6 Operational Constraints
+### 8.6 Operational Constraints
 
 - 99.99% uptime SLA
 - Automated daily backups (30-day retention)
@@ -490,14 +937,14 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 - Data residency law compliance
 - Audit logs for all transactions
 
-### 6.7 Security Constraints
+### 8.7 Security Constraints
 
 - AES-256 encryption at rest, TLS 1.3 in transit
 - GDPR (EU), CCPA (California) compliance
 - SOC 2 Type II certification
 - Secrets in cloud-native secret stores
 
-### 6.8 Performance Constraints
+### 8.8 Performance Constraints
 
 - 100,000+ concurrent users
 - 10,000+ transactions per minute
@@ -505,7 +952,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 - API response: 500ms (95th percentile)
 - Page load: 2 seconds (95th percentile)
 
-### 6.9 Development Constraints
+### 8.9 Development Constraints
 
 - Phase 1 (MVP): 3-4 months
 - 80%+ code coverage for business logic
@@ -513,7 +960,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 - Versioned database migrations with rollback plans
 - Code review required for all changes
 
-### 6.10 Feature Constraints
+### 8.10 Feature Constraints
 
 - No offline mode (Phase 1-2)
 - No blockchain integration (Phase 1-3)
@@ -523,9 +970,9 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 
 ---
 
-## 7. Acceptance Criteria
+## 9. Acceptance Criteria
 
-### 7.1 User Management & Authentication
+### 9.1 User Management & Authentication
 
 **Registration:** Users register with email, password, name, role, and phone. System validates email (RFC 5322), password strength (8+ chars, 1 uppercase, 1 lowercase, 1 number), and rejects duplicates. Verification email sent; login blocked until verified. JWT token returned on success.
 
@@ -535,7 +982,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 
 **Profile Management:** Users can view (GET /api/v1/users/me) and update name, phone, company details. Email cannot be changed via profile. Changes saved immediately with audit trail (updated_by, updated_at).
 
-### 7.2 Building & Floor Management
+### 9.2 Building & Floor Management
 
 **Create Building:** Owners create buildings with name, address (city, state, country, postal code), total floors, amenities (JSON), and coordinates. System auto-creates floor records (1 to N), validates address, associates with owner account. Building appears immediately in owner's list.
 
@@ -545,7 +992,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 
 **Manage Floors:** Owners update total_sqft and common_area_sqft. System auto-calculates net_leasable_sqft. Floor-specific amenities and floor plan images supported. Floor numbers unique per building.
 
-### 7.3 Space Management
+### 9.3 Space Management
 
 **Create Space:** Owners create spaces with name, gross_sqft, usable_sqft, usage_type, is_leasable flag, base_price_monthly, currency, availability_status (AVAILABLE, OCCUPIED, MAINTENANCE, RESERVED), amenities (JSON), and images. System validates gross_sqft >= usable_sqft and valid usage_type enum. Space appears immediately in owner's list.
 
@@ -555,7 +1002,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 
 **Update Space:** Owners update name, pricing, availability, amenities, images, is_leasable flag, and usage_type. Changes saved immediately. Active bids notified if space becomes unavailable. Space removed from client search if marked non-leasable.
 
-### 7.4 Bidding & Negotiation
+### 9.4 Bidding & Negotiation
 
 **Place Bid:** Clients place bids on available spaces. System validates amount > 0, prevents duplicate bids from same client on same space. Bid status set to PENDING. Real-time WebSocket notification sent to owner. Bid appears in client history and owner dashboard.
 
@@ -565,7 +1012,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 
 **Bid History:** Clients view all bids with status; owners view all bids for their spaces. History shows amount, status, timestamp, space details. Cursor-based pagination. History cannot be deleted.
 
-### 7.5 Lease & Contract Management
+### 9.5 Lease & Contract Management
 
 **Generate Lease:** System auto-generates lease documents from approved bids including space, client, owner details, terms, and pricing. Status set to DRAFT, version to 1. Contract type (LEASE, RENTAL, SALE) set correctly. Document stored and accessible via URL.
 
@@ -575,7 +1022,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 
 **Status Tracking:** System tracks status (DRAFT, PENDING_SIGNATURE, ACTIVE, EXPIRED, TERMINATED). Status changes logged in audit trail and trigger notifications.
 
-### 7.6 Payment Tracking
+### 9.6 Payment Tracking
 
 **Payment Schedule:** System generates schedules based on lease terms supporting EMI/installment plans. Each payment includes amount, due_date, installment_number, total_installments. Status set to SCHEDULED. Schedule visible to owner and client.
 
@@ -585,7 +1032,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 
 **Invoicing:** Auto-generated invoices include space details, amount, due date, payment method. Downloadable as PDF. Invoice URL stored and accessible.
 
-### 7.7 Dashboards & Reporting
+### 9.7 Dashboards & Reporting
 
 **Owner Dashboard:** Displays total buildings/spaces, occupied/available spaces, active bids, pending leases, current month revenue, upcoming income (scheduled payments), occupancy rates (building/floor level), recent activity, and occupancy heatmaps. Data updates in real-time or near real-time.
 
@@ -593,13 +1040,13 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 
 **Export Reports:** Owners export reports (CSV, PDF, Excel) including occupancy, revenue, and bid statistics. Filterable by building, date range, status. Reports generate within 30 seconds. Files downloadable.
 
-### 7.8 Notifications
+### 9.8 Notifications
 
 **Send Notifications:** Multi-channel delivery (email, WhatsApp, push, in-app) for bid updates, lease milestones, payment events. Delivered within 5 seconds. Preferences respected. Delivery failures logged.
 
 **Management:** Users view all notifications, mark as read/unread, mark all as read. Unread count displayed correctly. Cursor-based pagination.
 
-### 7.9 Search & Discovery
+### 9.9 Search & Discovery
 
 **Advanced Search:** Results within 1 second. Filters (location, size, price, amenities) work correctly. Only leasable spaces included. Case-insensitive with special character handling. Cursor-based pagination.
 
@@ -607,7 +1054,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 
 **Space Comparison:** Clients add multiple spaces to comparison list. Side-by-side view shows price, size, amenities, location. Spaces removable. List persists across sessions.
 
-### 7.10 Security & Compliance
+### 9.10 Security & Compliance
 
 **Data Encryption:** AES-256 at rest, TLS 1.3 in transit. Keys in cloud-native secret stores. No sensitive data in plain text logs.
 
@@ -615,7 +1062,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 
 **Audit Logging:** All actions logged (user_id, action, timestamp, IP). Logs tamper-proof, searchable, filterable. Retention per policy.
 
-### 7.11 Performance
+### 9.11 Performance
 
 **API Response:** 95% of requests within 500ms. Search within 1 second. Real-time updates sub-100ms latency. Optimized queries with proper indexes.
 
@@ -623,19 +1070,19 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 
 **Scalability:** Supports 100,000+ concurrent users, 10,000+ transactions/minute, 1 million+ listings. Horizontal scaling functional.
 
-### 7.12 Data Validation
+### 9.12 Data Validation
 
 **Input Validation:** All API inputs validated. Invalid inputs return 400 with clear errors. SQL injection and XSS blocked. File uploads validated (type, size).
 
 **Data Integrity:** Foreign key and check constraints enforced. At most one active lease per space. Gross sqft >= usable sqft. Floor numbers unique per building.
 
-### 7.13 Integration
+### 9.13 Integration
 
 **Third-Party:** Email, WhatsApp Business API, maps (Google Maps/Mapbox), e-signature platforms integrated. Failures handled gracefully with retries. Circuit breakers prevent cascade failures.
 
 **API Documentation:** All APIs documented with OpenAPI/Swagger. Documentation accessible, up-to-date, with request/response examples and authentication requirements.
 
-### 7.14 Definition of Done
+### 9.14 Definition of Done
 
 A feature is considered done when:
 1. All acceptance criteria are met
@@ -649,9 +1096,9 @@ A feature is considered done when:
 
 ---
 
-## 8. System Architecture
+## 10. System Architecture
 
-### 8.1 High-Level Architecture
+### 10.1 High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -697,7 +1144,7 @@ A feature is considered done when:
 └──────────────┴──────────────┴──────────────┴───────────────────┘
 ```
 
-### 8.2 Module Dependency Flow
+### 10.2 Module Dependency Flow
 
 ```
 ┌─────────────────┐
@@ -740,7 +1187,7 @@ A feature is considered done when:
                               └───────────────────┘
 ```
 
-### 8.3 Key Technical Decisions
+### 10.3 Key Technical Decisions
 
 - **Cursor-based pagination** for all list endpoints (performance at scale)
 - **Payment tracking only** (not processing) - money movement happens outside platform

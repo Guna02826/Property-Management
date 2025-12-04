@@ -29,41 +29,41 @@ Stores actual hierarchical relationships between specific users:
 
 ### Mandatory Hierarchy
 
-**If Manager role exists, Sales Rep must be overseen by Manager:**
+**Owner → Manager**: Manager must always report to Owner (mandatory when Owner exists).
 
-```sql
--- Default configuration
-INSERT INTO role_hierarchy_config (
-  organization_id, 
-  parent_role, 
-  child_role, 
-  is_enabled, 
-  requires_approval
-) VALUES (
-  NULL, -- Global default
-  'MANAGER',
-  'SALES_REP',
-  TRUE,
-  FALSE -- Can be set to TRUE if approval required
-);
-```
+**Conditional Hierarchy for Sales Rep Team**:
+- If Assistant Manager exists: Sales Rep team must be overseen by Assistant Manager
+- If Assistant Manager does not exist: Sales Rep team must be overseen by Manager
+
+This conditional logic ensures cost-effective hierarchy where Assistant Manager is only created when needed by Owner or Manager, avoiding unnecessary overhead.
 
 ### Standard Hierarchy Structure
 
 ```
 OWNER
   └── MANAGER
-      ├── ASSISTANT_MANAGER
-      └── SALES_REP
+      ├── ASSISTANT_MANAGER (optional, based on Owner or Manager's need)
+      │   └── SALES_REP (if Assistant Manager exists)
+      └── SALES_REP (if no Assistant Manager)
           └── CLIENT (via bookings/visits)
 ```
 
 ### Hierarchy Rules
 
-1. **Manager → Sales Rep**: Sales Rep must report to Manager when Manager exists
-2. **Manager → Assistant Manager**: Assistant Manager reports to Manager
-3. **Owner → Manager**: Manager reports to Owner
-4. **Sales Rep → Client**: Sales Rep manages client relationships (not enforced in hierarchy table, but in business logic)
+1. **Owner → Manager**: Manager reports to Owner (mandatory)
+2. **Manager → Assistant Manager**: Assistant Manager reports to Manager (optional - created based on Owner or Manager's need)
+3. **Assistant Manager → Sales Rep**: Sales Rep reports to Assistant Manager when Assistant Manager exists (conditional)
+4. **Manager → Sales Rep**: Sales Rep reports directly to Manager when no Assistant Manager exists (conditional)
+5. **Sales Rep → Client**: Sales Rep manages client relationships (not enforced in hierarchy table, but in business logic)
+
+### Conditional Hierarchy Logic
+
+The system implements conditional hierarchy based on the presence of Assistant Manager:
+
+- **If Assistant Manager exists**: Sales Rep team reports to Assistant Manager
+- **If Assistant Manager does not exist**: Sales Rep team reports directly to Manager
+
+This ensures cost-effective hierarchy where Assistant Manager is only created when needed by Owner or Manager.
 
 ## Implementation
 
@@ -78,21 +78,31 @@ async function createSalesRep(userData: CreateUserDto): Promise<User> {
   });
   
   if (hasManager) {
-    // Check if hierarchy is enabled
+    // Check if Assistant Manager exists for this Manager
+    const assistantManager = await this.findAssistantManagerForManager(
+      userData.organization_id,
+      userData.manager_id
+    );
+    
+    // Determine parent based on Assistant Manager existence
+    const parentId = assistantManager ? assistantManager.id : userData.manager_id;
+    const parentRole = assistantManager ? 'ASSISTANT_MANAGER' : 'MANAGER';
+    
+    // Check if hierarchy is enabled for the appropriate parent role
     const hierarchyConfig = await this.hierarchyConfigRepository.findOne({
       where: {
         organization_id: userData.organization_id,
-        parent_role: 'MANAGER',
+        parent_role: parentRole,
         child_role: 'SALES_REP',
         is_enabled: true
       }
     });
     
     if (hierarchyConfig) {
-      // Sales Rep must be assigned to a Manager
-      if (!userData.manager_id) {
+      // Sales Rep must be assigned to a parent (Manager or Assistant Manager)
+      if (!parentId) {
         throw new ValidationError(
-          'Sales Rep must be assigned to a Manager when Manager role exists'
+          `Sales Rep must be assigned to a ${parentRole} when Manager role exists`
         );
       }
       
@@ -101,7 +111,7 @@ async function createSalesRep(userData: CreateUserDto): Promise<User> {
       
       // Create hierarchy relationship
       await this.userRoleHierarchyRepository.create({
-        parent_user_id: userData.manager_id,
+        parent_user_id: parentId,
         child_user_id: salesRep.id,
         hierarchy_config_id: hierarchyConfig.id,
         is_active: true
@@ -113,6 +123,26 @@ async function createSalesRep(userData: CreateUserDto): Promise<User> {
   
   // If no Manager or hierarchy disabled, create without hierarchy
   return await this.userRepository.create(userData);
+}
+
+async function findAssistantManagerForManager(
+  organizationId: UUID,
+  managerId: UUID
+): Promise<User | null> {
+  // Check if there's an active Assistant Manager under this Manager
+  const hierarchy = await this.userRoleHierarchyRepository.findOne({
+    where: {
+      parent_user_id: managerId,
+      is_active: true
+    },
+    relations: ['child_user', 'hierarchy_config']
+  });
+  
+  if (hierarchy && hierarchy.hierarchy_config.child_role === 'ASSISTANT_MANAGER') {
+    return hierarchy.child_user;
+  }
+  
+  return null;
 }
 ```
 
@@ -165,7 +195,8 @@ async function getManagerSubordinates(managerId: UUID): Promise<User[]> {
 }
 
 async function getSalesRepsUnderManager(managerId: UUID): Promise<User[]> {
-  const hierarchies = await this.userRoleHierarchyRepository.find({
+  // Get direct Sales Reps under Manager (if no Assistant Manager)
+  const directHierarchies = await this.userRoleHierarchyRepository.find({
     where: {
       parent_user_id: managerId,
       is_active: true
@@ -173,9 +204,34 @@ async function getSalesRepsUnderManager(managerId: UUID): Promise<User[]> {
     relations: ['child_user', 'hierarchy_config']
   });
   
-  return hierarchies
+  const directSalesReps = directHierarchies
     .filter(h => h.hierarchy_config.child_role === 'SALES_REP')
     .map(h => h.child_user);
+  
+  // Get Sales Reps under Assistant Managers (if Assistant Manager exists)
+  const assistantManagers = directHierarchies
+    .filter(h => h.hierarchy_config.child_role === 'ASSISTANT_MANAGER')
+    .map(h => h.child_user);
+  
+  const indirectSalesReps: User[] = [];
+  for (const assistantManager of assistantManagers) {
+    const salesRepHierarchies = await this.userRoleHierarchyRepository.find({
+      where: {
+        parent_user_id: assistantManager.id,
+        is_active: true
+      },
+      relations: ['child_user', 'hierarchy_config']
+    });
+    
+    const salesReps = salesRepHierarchies
+      .filter(h => h.hierarchy_config.child_role === 'SALES_REP')
+      .map(h => h.child_user);
+    
+    indirectSalesReps.push(...salesReps);
+  }
+  
+  // Return combined list (direct + indirect via Assistant Manager)
+  return [...directSalesReps, ...indirectSalesReps];
 }
 ```
 
@@ -339,10 +395,13 @@ INSERT INTO role_hierarchy_config (
   created_at,
   updated_at
 ) VALUES
-  (NULL, 'MANAGER', 'SALES_REP', TRUE, FALSE, NOW(), NOW()),
+  (NULL, 'OWNER', 'MANAGER', TRUE, FALSE, NOW(), NOW()),
   (NULL, 'MANAGER', 'ASSISTANT_MANAGER', TRUE, FALSE, NOW(), NOW()),
-  (NULL, 'OWNER', 'MANAGER', TRUE, FALSE, NOW(), NOW());
+  (NULL, 'ASSISTANT_MANAGER', 'SALES_REP', TRUE, FALSE, NOW(), NOW()),
+  (NULL, 'MANAGER', 'SALES_REP', TRUE, FALSE, NOW(), NOW());
 ```
+
+**Note:** Both `ASSISTANT_MANAGER → SALES_REP` and `MANAGER → SALES_REP` configurations are enabled by default. The system logic determines which one to use based on whether an Assistant Manager exists for the Manager. This ensures cost-effective hierarchy where Assistant Manager is optional.
 
 ### Migrating Existing Users
 
@@ -375,3 +434,4 @@ async function migrateExistingSalesReps(): Promise<void> {
 
 **Last Updated:** 2025-01-27  
 **Version:** 1.0
+

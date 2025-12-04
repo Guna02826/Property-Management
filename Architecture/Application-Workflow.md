@@ -4,7 +4,7 @@
 **Document Type:** End-to-End Workflow Guide  
 **Version:** 1.0  
 **Date:** 2025-12-02  
-**Related Documents:** [Software Requirements Specification](../Final%20Requirements/SRS-Complete.md), [MVC Architecture](./MVC-Architecture.md)
+**Related Documents:** [Software Requirements Specification](../Requirements/SRS-Complete.md), [MVC Architecture](./MVC-Architecture.md)
 
 ---
 
@@ -62,7 +62,7 @@ This document describes the complete end-to-end workflows for the Enterprise Mul
 - `POST /api/v1/auth/verify-email` - Verify email address
 - `POST /api/v1/auth/verify-2fa` - Enable 2FA
 
-**Related:** [SRS Section 4.1 - User Management](../Final%20Requirements/SRS-Complete.md#41-user-management--authentication), [MVC AuthController](./MVC-Architecture.md#31-auth--user-controllers)
+**Related:** [SRS Section 4.1 - User Management](../Requirements/SRS-Complete.md#41-user-management--authentication), [MVC AuthController](./MVC-Architecture.md#31-auth--user-controllers)
 
 **Step 1.2: Profile Completion**
 - Upload company logo/documentation
@@ -110,7 +110,7 @@ Registration → Email Verification → Profile Setup → First Login → Dashbo
 - `GET /api/v1/spaces/{id}` - Get space details
 
 **Technical Notes:**
-- Uses cursor-based pagination (see [SRS Section 5 - Non-Functional Requirements](../Final%20Requirements/SRS-Complete.md#5-non-functional-requirements))
+- Uses cursor-based pagination (see [SRS Section 5 - Non-Functional Requirements](../Requirements/SRS-Complete.md#5-non-functional-requirements))
 - Only returns spaces where `is_leasable = true` for client-facing endpoints
 - AI recommendations calculated server-side and included in response
 
@@ -185,7 +185,7 @@ Registration → Email Verification → Profile Setup → First Login → Dashbo
 - Conflict detection checks for overlapping time ranges on same date for same space
 - Only visits with status SCHEDULED or CONFIRMED are considered for conflicts
 - Visit status transitions: SCHEDULED → CONFIRMED → COMPLETED/CANCELLED/NO_SHOW
-- Hierarchy enforcement: Sales rep visits may require manager approval if configured
+- Hierarchy enforcement: Sales rep visits may require assistant manager/manager approval if configured (based on hierarchy)
 
 **Related:** [MVC VisitController](./MVC-Architecture.md#34-visit--scheduling-controllers), [Visit Conflict Detection](../Documentation/Visit-Conflict-Detection.md)
 
@@ -227,7 +227,7 @@ Search → Filter → View Results → Select Space → View Details → Virtual
 - Real-time validation ensures space is still available
 - WebSocket connection established for real-time bid updates
 
-**Related:** [MVC BidController](./MVC-Architecture.md#33-bidding--contract-controllers), [SRS Section 4.5 - Bidding & Negotiation](../Final%20Requirements/SRS-Complete.md#45-bidding--negotiation)
+**Related:** [MVC BidController](./MVC-Architecture.md#33-bidding--contract-controllers), [SRS Section 4.5 - Bidding & Negotiation](../Requirements/SRS-Complete.md#45-bidding--negotiation)
 
 **Step 3.2: Bid Configuration**
 - User enters:
@@ -758,8 +758,9 @@ Team Management → Create Agents → Assign Permissions → Delegate Tasks → 
   - Commission structure
   - Contact information
 - System enforces hierarchy:
-  - If Manager role exists in organization, Sales Rep must be assigned to a Manager
-  - Manager assignment is required before account activation (if hierarchy enabled)
+  - If Manager role exists in organization, Sales Rep must be assigned to a parent (Assistant Manager or Manager)
+  - Conditional assignment: Sales Rep reports to Assistant Manager when Assistant Manager exists, otherwise reports directly to Manager
+  - Parent assignment is required before account activation (if hierarchy enabled)
 
 ### 2. Lead Management
 - Receives assigned leads from owners or the platform
@@ -1514,5 +1515,5 @@ class CircuitBreaker {
 
 **Document Version:** 1.0  
 **Last Updated:** 2025-12-02  
-**Related Documents:** [Software Requirements Specification](../Final%20Requirements/SRS-Complete.md), [MVC Architecture](./MVC-Architecture.md)
+**Related Documents:** [Software Requirements Specification](../Requirements/SRS-Complete.md), [MVC Architecture](./MVC-Architecture.md)
 

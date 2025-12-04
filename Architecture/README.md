@@ -30,8 +30,8 @@ This folder contains architecture and design documentation for the Enterprise Mu
 
 ## 🔗 Related Documentation
 
-- [SRS (Software Requirements Specification)](../Final%20Requirements/SRS-Complete.md)
-- [Technical Implementation Details](../Final%20Requirements/Technical-Implementation-Details.md)
+- [SRS (Software Requirements Specification)](../Requirements/SRS-Complete.md)
+- [Technical Implementation Details](../Requirements/Technical-Implementation-Details.md)
 - [API Documentation](../Documentation/API-Documentation.md)
 - [Database Schema](../Documentation/Database-Schema.md)
 

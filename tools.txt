@@ -1,5 +1,0 @@
-Technical Details:
-Fastify for backend framework 
-PostgreSQLfor Database
-Cloud Run Instead of Kubernetes
-Cursor Pagination
