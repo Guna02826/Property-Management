@@ -134,6 +134,12 @@ These files appear to be older versions or duplicates:
 3. **Software-Requirements-Specification.md** - Longer SRS variant (superseded by SRS-Complete.md)
 4. **SRS-Enterprise-Platform.md** - Older SRS variant (superseded by SRS-Complete.md)
 
+### Archived Files
+
+These draft/preliminary files have been moved to the `Archive/` folder:
+
+1. **RequirementDraft.txt** - Incomplete preliminary planning material (superseded by SRS-Complete.md) - ✅ Moved to `Archive/RequirementDraft.txt`
+
 ---
 
 ## 📊 Documentation Statistics
