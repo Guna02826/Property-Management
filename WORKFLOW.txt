@@ -1,0 +1,364 @@
+Reviewing key documentation to map the end-to-end workflow.
+
+
+[6 tools called]
+
+
+Explaining the end-to-end workflow from initial setup through ongoing operations.
+
+
+[1 tool called]
+
+
+Reading the Application Workflow document for the complete workflow:
+
+
+[1 tool called]
+
+
+# Complete Application Workflow: From Scratch to End
+
+End-to-end workflow of the Enterprise Multi-Floor Commercial Office Leasing Platform, from initial setup through ongoing operations.
+
+## System initialization and setup
+
+### 1. Platform deployment
+- Infrastructure: PostgreSQL, Redis, object storage (S3), API servers, WebSocket servers
+- Database migrations: schema creation, indexes, constraints
+- Default configurations: role hierarchy rules, notification templates, AI model initialization
+- External integrations: email (SendGrid/SES), maps (Google Maps/Mapbox), e-signature (DocuSign), WhatsApp API
+
+### 2. Super Admin setup
+- Super Admin account creation
+- Platform configuration: payment gateways, notification channels, AI parameters
+- Multi-tenant setup (if applicable)
+- Initial audit logging
+
+---
+
+## User registration and onboarding
+
+### Client registration
+1. Account creation
+   - Email/password or OAuth2 (Google/LinkedIn)
+   - Email verification
+   - Optional 2FA/biometric
+2. Profile completion
+   - Company info, preferences (location, size, budget)
+   - Notification preferences
+   - Language/currency
+3. First login
+   - Dashboard with AI recommendations
+   - Onboarding tutorial
+
+### Owner registration
+1. Business account creation
+   - Business credentials, tax ID, bank details
+   - Admin approval (if required)
+2. Building registration
+   - Building details (name, address, total floors)
+   - System auto-creates floor records (1 to N)
+   - Building photos/documentation
+3. Floor setup
+   - Floor metadata (sqft, amenities, floor plans)
+   - Net leasable sqft calculated automatically
+4. Space listing
+   - Create spaces (leasable and non-leasable: canteens, restrooms, storage, etc.)
+   - Set pricing (AI suggestions available)
+   - Upload media (photos, 3D models, virtual tours)
+   - Bulk import via CSV/Excel
+
+### Sales Rep/Broker registration
+1. Account creation with broker credentials
+2. Hierarchy enforcement: if Manager exists, Sales Rep must be assigned to a Manager
+3. Profile: company affiliation, specializations, commission structure
+
+---
+
+## Core business workflows
+
+### Phase 1: Space discovery (Client)
+
+1. Search and filter
+   - Filters: location, size, price, amenities, availability
+   - Map view with heatmaps
+   - Cursor-based pagination
+   - Only `is_leasable = true` spaces shown
+
+2. Space details
+   - High-res images, 3D floor plans, virtual tours
+   - Pricing, availability calendar, reviews
+   - Similar spaces suggestions (AI)
+
+3. Virtual tour
+   - AR/VR modes, 3D walkthrough
+   - Measure spaces, visualize furniture
+
+4. Private visit booking
+   - Select date/time
+   - Conflict detection (prevents overlapping visits same day)
+   - Visit types: PRIVATE, GROUP, VIRTUAL
+   - Notifications to client, sales rep, manager (if hierarchy requires)
+
+5. Space comparison
+   - Side-by-side comparison
+   - Price, size, amenities, AI scores
+
+### Phase 2: Bidding process
+
+1. Bid initiation
+   - Client selects space → "Place Bid"
+   - System shows: asking price, AI-suggested range, success probability, market data
+
+2. Bid configuration
+   - Enter: bid amount, lease start date, duration, terms
+   - AI feedback: competitiveness score, suggestions
+
+3. Bid submission
+   - Validation: amount thresholds, account status, space availability, duplicate prevention
+   - Status: "PENDING"
+   - Real-time WebSocket notification to owner
+
+4. Bid tracking
+   - Client dashboard: all bids with status
+   - Real-time updates via push/email/in-app
+
+5. Owner bid management
+   - Real-time notification
+   - Review: client info, bid amount, terms, AI analysis
+   - Decision: Approve / Reject / Counter-Offer / Auto-Approve (if rules match)
+
+6. Negotiation
+   - Counter-offers supported
+   - Multi-round negotiation
+   - In-app messaging
+
+### Phase 3: Contract execution
+
+1. Contract generation (on bid approval)
+   - Auto-generate from approved bid
+   - Template selection, populate terms
+   - Jurisdiction-specific clauses
+   - Status: "DRAFT"
+
+2. Contract review
+   - Client reviews terms, pricing, duration
+   - Request modifications (if allowed)
+   - Version control
+
+3. E-signature
+   - Client signs (digital/touch/biometric)
+   - Owner signs
+   - Fully executed contract generated
+   - Status: "PENDING_SIGNATURE" → "ACTIVE"
+
+4. Payment schedule generation
+   - System generates schedule based on contract terms
+   - Supports EMI/installments
+   - Each payment: amount, due date, installment number, status (SCHEDULED/DUE/PAID/OVERDUE)
+   - Payment tracking only (no direct processing)
+
+5. Contract activation
+   - Initial payment confirmed (external method)
+   - Status: "ACTIVE"
+   - Space assigned to client
+   - Access credentials provided (if applicable)
+   - Welcome package sent
+
+### Phase 4: Payment tracking
+
+1. Payment schedule visibility
+   - Client/Owner view: all installments with due dates, amounts, status
+   - Upcoming bills highlighted
+
+2. Payment recording
+   - Client pays externally (bank transfer, cheque, corporate portal)
+   - Owner/Finance records payment in system
+   - Upload proof/reference number (optional)
+
+3. Payment status updates
+   - Status: SCHEDULED → DUE → PAID (or OVERDUE)
+   - Auto-updates on due date
+   - Invoice/receipt auto-generated
+
+4. Payment reminders
+   - Automated: due date reminders, overdue alerts
+   - Multi-channel: email, WhatsApp, push, in-app
+
+### Phase 5: Ongoing management
+
+1. Client dashboard
+   - Active leases, upcoming payments, expiration alerts
+   - Recommended spaces (for expansion), notifications
+
+2. Owner dashboard
+   - Occupancy rates (building/floor/space), revenue trends
+   - Active bids, pending leases, upcoming renewals
+   - Upcoming income (sum of scheduled payments)
+
+3. Payment management
+   - Payment history, upcoming bills, invoices/receipts
+   - Payment status tracking
+
+4. Lease renewal
+   - Auto-detection: 30/60/90 days before expiry
+   - Renewal notifications
+   - Options: Accept / Negotiate / Decline
+   - New lease auto-generated if accepted
+
+5. Analytics and reporting
+   - Occupancy heatmaps (building/floor/space)
+   - Revenue analytics, bid analytics
+   - AI insights: pricing suggestions, demand forecasting
+   - Export reports (CSV, PDF, Excel)
+
+---
+
+## Role hierarchy and management workflows
+
+### Manager workflow
+1. Team oversight
+   - View subordinate activities (Sales Reps, Assistant Managers)
+   - Approve visits (if hierarchy requires)
+   - Monitor team performance
+
+2. Visit management
+   - View/manage subordinate visits
+   - Approve visit bookings (if configured)
+   - Track team visit statistics
+
+3. Performance monitoring
+   - Team metrics: visits, bids, conversions
+   - Dashboard with subordinate activities
+
+### Sales Rep workflow
+1. Lead management
+   - Receive assigned leads
+   - Track lead status: New → Contacted → Qualified → Viewing → Bidding → Closed
+
+2. Visit management
+   - Book visits for clients
+   - Conflict detection enforced
+   - Manage assigned visits calendar
+   - Status updates: SCHEDULED → CONFIRMED → COMPLETED
+
+3. Client communication
+   - In-app messaging, email, meeting scheduling
+   - Communication history
+
+4. Deal facilitation
+   - Assist with space selection, bid preparation, negotiation, lease review
+   - Commission tracking
+
+---
+
+## System automation workflows
+
+### 1. AI pricing engine
+- Trigger: Market data updates, space listing changes, scheduled
+- Process: Collect market data → AI analysis → Generate recommendations → Update owner dashboard → Optional auto-adjust
+
+### 2. Bid processing automation
+- Trigger: New bid submission
+- Process: Validate bid → Calculate AI score → Check auto-approval rules → Auto-approve if match → Generate lease → Notify parties
+
+### 3. Lease generation automation
+- Trigger: Bid approval
+- Process: Select template → Populate data → Apply jurisdiction rules → Generate document → Send for review → Track versions
+
+### 4. Notification automation
+- Trigger: Events (bid updates, lease milestones, payments, visits)
+- Process: Identify users → Check preferences → Generate content → Send via email/SMS/push/in-app → Log delivery → Track read receipts
+
+### 5. Lease renewal automation
+- Trigger: 30/60/90 days before expiration
+- Process: Identify expiring leases → Generate renewal offer → Send notification → Track response → Generate new lease if accepted
+
+### 6. Payment reminder automation
+- Trigger: Payment due dates approaching
+- Process: Identify due payments → Generate reminders → Send multi-channel notifications → Update status to OVERDUE if past due
+
+### 7. Analytics pipeline
+- Trigger: Scheduled (hourly/daily) or real-time
+- Process: Collect data → Aggregate metrics → Calculate trends → Generate forecasts → Update dashboards → AI insights → Alert anomalies
+
+### 8. Occupancy tracking automation
+- Trigger: Lease status changes, IoT sensor data
+- Process: Monitor active leases → Calculate occupancy (building/floor/space) → Update heatmaps → Generate alerts → Update availability calendars
+
+---
+
+## Integration workflows
+
+### Payment gateway integration
+- Flow: User initiates → System validates → Calls gateway API → Processes → Webhook confirmation → Updates status → Notifications
+
+### E-signature integration (DocuSign/Adobe Sign)
+- Flow: Lease ready → Call e-signature API → Send document → Parties sign → Webhook confirms → Lease activated
+
+### Accounting/ERP integration (QuickBooks/Zoho/SAP)
+- Flow: Payment recorded → Invoice generated → Sync to ERP → Accounting entries → Financial reports updated
+
+### Mapping service integration
+- Flow: User searches location → Query mapping API → Display results → Geocoding → Map rendered with spaces
+
+---
+
+## Error handling and exception workflows
+
+### Payment failure
+- Process: Receive error → Log details → Notify user with retry options → Notify owner → Maintain pending status → Schedule retry
+
+### Bid rejection
+- Process: Owner rejects → Update status → Notify client with reason → Suggest alternatives (AI) → Release space → Update analytics
+
+### Lease expiration without renewal
+- Process: Detect expiration approaching → Send reminders → On expiration: Mark expired → Space available → Final payment → Revoke access → Generate reports
+
+### System outage
+- Process: Monitoring detects → Alert admin → Failover to backup → Maintenance message → Queue operations → Recovery → Process queue → Delayed notifications
+
+---
+
+## Complete workflow summary
+
+### Client journey
+```
+Registration → Email Verification → Profile Setup → Browse Spaces → 
+Virtual Tour → Book Visit → Place Bid → Negotiate → Bid Approved → 
+Contract Review → E-Sign → Payment Schedule → Record Payments → 
+Active Lease → Ongoing Management → Payment Tracking → 
+Lease Renewal → Reviews
+```
+
+### Owner journey
+```
+Registration → Building Setup → Floor Configuration → Space Listing → 
+Pricing (AI) → Receive Bids → Evaluate → Approve/Reject/Counter → 
+Generate Lease → E-Sign → Payment Tracking → Active Lease → 
+Analytics Dashboard → Occupancy Management → Revenue Tracking → 
+Team Management → Ongoing Operations
+```
+
+### Sales Rep journey
+```
+Registration → Manager Assignment (if hierarchy) → Lead Assignment → 
+Client Communication → Book Visits → Conflict Detection → 
+Visit Management → Deal Facilitation → Commission Tracking
+```
+
+---
+
+## Technical implementation highlights
+
+- Real-time updates: WebSocket connections for instant bid/lease/payment notifications
+- Conflict detection: Prevents overlapping visits on same day for same space
+- Cursor-based pagination: Efficient pagination for all list endpoints
+- Payment tracking: Records external payments, generates schedules, tracks status
+- Role hierarchy: Configurable oversight relationships (Manager → Sales Rep)
+- AI integration: Pricing suggestions, space recommendations, bid success probability
+- Multi-channel notifications: Email, WhatsApp, push, in-app
+- Audit trail: All actions logged for compliance
+- Automated workflows: Lease generation, payment reminders, renewal notifications
+
+This workflow covers the lifecycle from initial setup through ongoing operations, with automation, real-time updates, and role-based access control.
