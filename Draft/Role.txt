@@ -1,13 +1,96 @@
 Roles:
-Owner
--Add building details to the app
--Building details contains of location, name, 
--
 
-Manager
-(If in case)Assistant Manager
-Sales Rep
+Owner (Building Owner / Admin)
+- Add building details to the app (name, address, coordinates, total floors)
+- Manage buildings, floors, and spaces (create, update, delete)
+- Set pricing for spaces with AI suggestions
+- View occupancy and revenue dashboards
+- View occupancy heatmaps at building, floor, and space levels
+- Approve, reject, or counter bids on spaces
+- Auto-generate lease documents from approved bids
+- Track metrics and export reports (CSV, PDF, Excel)
+- Delegate permissions to managers and sales representatives
+- Manage space availability status (Available, Occupied, Maintenance, Reserved)
+- Upload images, videos, and 3D models for spaces
+- Set amenities for buildings, floors, and spaces
+- View active bids and pending leases
+- Track upcoming income from scheduled payments
 
-Client
+Manager (Property Manager)
+- Oversee day-to-day building operations
+- Coordinate maintenance and service requests
+- Manage tenant relationships
+- Track service requests and escalations
+- Monitor occupancy and utilization metrics
+- Coordinate vendors and contractors
+- View building and floor-level occupancy reports
+- Manage space availability (with owner approval)
+- View payment schedules and status
+- Access building and space information
+- Generate operational reports
 
-Future Configurable according to hierarchy must be enabled for instance if manager is added, then salesrep must be over seen by manager
+Assistant Manager (If applicable)
+- Assist Property Manager with day-to-day operations
+- Manage service requests (limited authority)
+- View occupancy and utilization metrics
+- Coordinate vendors (with manager approval)
+- Access building and space information (read-only for sensitive data)
+- Generate operational reports (limited scope)
+
+Sales Rep (Sales Representative / Broker)
+- Manage client relationships and leads
+- Conduct virtual tours and schedule viewings
+- Process lease applications
+- Track commissions and sales metrics
+- Use CRM tools for lead management
+- In-app messaging with clients
+- View available spaces and pricing
+- Assist clients with bidding process
+- Generate sales reports
+- Access client information (with permissions)
+- Note: Must be overseen by Manager if Manager role exists in hierarchy
+
+Client (Tenant)
+- Search and filter spaces by location, size, price, amenities, and availability
+- View spaces on interactive map with property markers
+- Compare multiple spaces side-by-side
+- View virtual tours and 3D floor plans
+- Receive AI-powered space recommendations
+- Place bids on available spaces
+- Track bid status (Pending, Approved, Rejected, Counter-Offered, Withdrawn)
+- View active bids and bid history
+- View lease documents and contracts
+- Download contracts and documents
+- View payment schedules and status
+- Record external payments (bank transfer, cheque, external gateway)
+- Download invoices and receipts
+- Rate and review spaces
+- Receive notifications for bid updates, lease milestones, and payment events
+- Manage notification preferences
+
+Support / Agent
+- Assist users with inquiries and issues
+- Limited data access (view-only for most features)
+- Manage communications and escalations
+- Track support tasks and tickets
+- View support metrics and reports
+- Access user information (with privacy restrictions)
+- Escalate issues to appropriate roles
+
+System Administrator / Super Admin
+- Configure platform-wide settings
+- Manage users, roles, and permissions
+- System monitoring and health checks
+- View audit logs and system activity
+- Multi-tenant organization management
+- Integration configuration (email, WhatsApp, maps, e-signature)
+- Global policy management
+- Access all system features and data
+- Manage role hierarchies and permissions
+
+Future Requirements:
+- Configurable role hierarchy must be enabled
+- If Manager role is added, Sales Rep must be overseen by Manager
+- Role permissions should be configurable per organization
+- Support for custom roles and permission sets
+- Hierarchical reporting structure (Manager → Sales Rep → Client interactions)
