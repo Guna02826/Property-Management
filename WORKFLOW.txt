@@ -1,21 +1,3 @@
-Reviewing key documentation to map the end-to-end workflow.
-
-
-[6 tools called]
-
-
-Explaining the end-to-end workflow from initial setup through ongoing operations.
-
-
-[1 tool called]
-
-
-Reading the Application Workflow document for the complete workflow:
-
-
-[1 tool called]
-
-
 # Complete Application Workflow: From Scratch to End
 
 End-to-end workflow of the Enterprise Multi-Floor Commercial Office Leasing Platform, from initial setup through ongoing operations.
