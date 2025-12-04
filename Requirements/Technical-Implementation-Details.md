@@ -1,7 +1,7 @@
 # Technical Implementation Details
-## Enterprise Multi-Floor Commercial Office Leasing Platform
+## Neorem Platform
 
-**Version:** 1.0  
+**Version:** 2.0  
 **Date:** 2025-01-27  
 **Document Type:** Technical Specification  
 **Related Document:** SRS-Complete.md
@@ -31,21 +31,24 @@
 - **Framework:** React 18+ with Next.js 14+ (App Router)
 - **Language:** TypeScript 5.0+
 - **UI Framework:** TailwindCSS 3.4+, shadcn/ui components
-- **State Management:** Zustand or Redux Toolkit
+- **State Management:** TanStack Query (React Query) for server state, Zustand for client-only state
+  - **Decision:** TanStack Query recommended for server state management
+  - **Redux:** Only if complex global state management needed
 - **Form Handling:** React Hook Form with Zod validation
 - **Real-time:** Socket.io-client for WebSocket connections
-- **Maps:** Google Maps API or Mapbox GL JS
+- **Maps:** Google Maps API
 - **AR/VR:** Three.js, A-Frame (Phase 4)
 - **Charts:** Recharts or Chart.js for analytics
 - **Date Handling:** date-fns or Day.js
 
 #### Mobile Application
-- **Framework:** React Native 0.72+ or Flutter 3.0+ (cross-platform)
-- **Navigation:** React Navigation (React Native) or Flutter Navigator
-- **State Management:** Redux Toolkit or Provider (Flutter)
-- **Maps:** react-native-maps or Google Maps SDK
-- **Push Notifications:** Firebase Cloud Messaging (FCM) or OneSignal
-- **Biometric Auth:** react-native-biometrics or local_auth (Flutter)
+- **Approach:** Progressive Web App (PWA) - NO native mobile app development
+- **Framework:** React 18+ with Next.js 14+ (responsive web app)
+- **Mobile Optimization:** Responsive design for mobile browsers
+- **PWA Features:** Service workers, offline support, installable on mobile devices
+- **Maps:** Google Maps API (web-based)
+- **Push Notifications:** Web Push API (via service workers)
+- **Biometric Auth:** WebAuthn API (browser-based)
 
 ### 1.2 Backend
 
@@ -74,60 +77,54 @@
 ### 1.3 Database & Storage
 
 #### Primary Database
-- **PostgreSQL:** Version 14+ (managed: Cloud SQL, RDS, Azure Database)
-- **ORM:** Prisma or TypeORM
-- **Migrations:** Prisma Migrate or TypeORM migrations
-- **Connection Pooling:** pgBouncer or built-in pooler
+- **PostgreSQL:** Version 14+ (managed: Google Cloud SQL)
+- **ORM:** Sequelize (ONLY - no Prisma/TypeORM)
+- **Migrations:** Sequelize migrations
+- **Connection Pooling:** pgBouncer or Sequelize built-in pooler
 
 #### Caching & Session Storage
-- **Redis:** Version 6+ (managed: ElastiCache, Memorystore, Azure Cache)
+- **Redis:** Version 6+ (managed: Google Cloud Memorystore)
 - **Use Cases:** Session storage, query caching, rate limiting, real-time data
 
-#### Analytics Database (Optional)
-- **MongoDB:** Version 6+ (for analytics aggregation, Phase 3)
-- **Time-Series:** InfluxDB or TimescaleDB (for IoT data, Phase 4)
-
 #### Object Storage
-- **Provider:** AWS S3, Google Cloud Storage, or Azure Blob Storage
-- **CDN:** CloudFront, Cloudflare, or Cloud CDN
+- **Provider:** Google Cloud Storage (ONLY - no AWS S3, no Azure Blob)
+- **CDN:** Google Cloud CDN
 - **File Types:** Images, videos, 3D models, PDFs (lease documents)
 
 ### 1.4 Infrastructure
 
 #### Container & Orchestration
 - **Container Runtime:** Docker containers
-- **Orchestration:** Google Cloud Run, AWS ECS/Fargate, or Azure Container Apps (Phase 1)
-- **Kubernetes:** GKE, EKS, or AKS (Phase 2+)
-- **Service Mesh:** Istio or Linkerd (Phase 3+)
+- **Orchestration:** Google Cloud Run (ONLY - containerized deployment)
+- **Kubernetes:** GKE (Phase 2+)
+- **Service Mesh:** Istio (Phase 3+)
 
 #### Message Queue & Event Streaming
-- **Message Queue:** RabbitMQ or AWS SQS (async processing)
-- **Event Bus:** Apache Kafka (Phase 3+ for event streaming)
-- **Pub/Sub:** Google Pub/Sub, AWS SNS/SQS, or Azure Service Bus
+- **Message Queue:** Google Cloud Tasks or Cloud Pub/Sub
+- **Event Bus:** Google Cloud Pub/Sub (Phase 3+ for event streaming)
+- **Pub/Sub:** Google Pub/Sub (ONLY)
 
 #### Monitoring & Logging
-- **APM:** Datadog, New Relic, or Elastic APM
-- **Metrics:** Prometheus + Grafana
-- **Logging:** ELK Stack (Elasticsearch, Logstash, Kibana) or CloudWatch
-- **Tracing:** Jaeger or Zipkin for distributed tracing
+- **APM:** Google Cloud Monitoring (ONLY)
+- **Metrics:** Google Cloud Monitoring + Grafana (optional)
+- **Logging:** Google Cloud Logging (ONLY)
+- **Tracing:** Google Cloud Trace (ONLY)
+- **No External Services:** No Datadog, New Relic, ELK Stack, CloudWatch, etc.
 
 ### 1.5 AI/ML Services
 
-#### Core ML Stack
-- **Language:** Python 3.10+
-- **Frameworks:** TensorFlow 2.x or PyTorch 2.0+
-- **ML Libraries:** scikit-learn, pandas, numpy
-- **Cloud ML:** AWS SageMaker, GCP Vertex AI, or Azure ML
+#### AI/ML Services (Vector Matching Only)
+- **Approach:** Vector similarity search using pre-trained embeddings
+- **Embedding Models:** OpenAI embeddings, Cohere embeddings, or open-source models (sentence-transformers)
+- **Vector Database:** pgvector (PostgreSQL extension) or Pinecone/Weaviate
+- **Use Case:** Semantic search and similarity matching for space recommendations
 
-#### Vector Database (Phase 3)
-- **Provider:** Pinecone, Weaviate, or Qdrant
-- **Use Case:** Similarity search for space recommendations
-
-#### ML Models
-- **Pricing Suggestions:** Regression models (XGBoost, Random Forest)
-- **Space Recommendations:** Collaborative filtering + content-based
-- **Occupancy Forecasting:** Time series models (LSTM, Prophet)
-- **Bid Success Probability:** Classification models (Logistic Regression, Neural Networks)
+#### AI Implementation Constraints
+- **NO Model Training:** System must NOT create or train new ML models
+- **NO Model Fine-tuning:** System must NOT fine-tune existing models
+- **Vector Matching Only:** Use pre-existing embedding models + vector similarity search
+- **Recommendation Engine:** Cosine similarity or other vector distance metrics
+- **No Custom ML Pipelines:** Focus on semantic search and similarity matching
 
 ---
 

@@ -1,7 +1,7 @@
 # Database Schema Documentation
-## Enterprise Multi-Floor Commercial Office Leasing Platform
+## Neorem Platform
 
-**Version:** 1.0  
+**Version:** 2.0  
 **Date:** 2025-01-27  
 **Database:** PostgreSQL 14+
 
@@ -34,8 +34,9 @@
 
 - **Normalization:** Third Normal Form (3NF)
 - **Audit Trail:** All tables include `created_at`, `updated_at`, `created_by`, `updated_by`
-- **Soft Deletes:** Not implemented (hard deletes with audit logs)
+- **Soft Deletes:** All tables include `deleted_at`, `deleted_by` for recycle bin functionality
 - **Foreign Keys:** Enforced with CASCADE or RESTRICT as appropriate
+- **Parent-Child Relationships:** Support for detach and cascade deletion strategies
 
 ---
 
@@ -58,9 +59,20 @@
 │─────────────────│─────▶│──────────────│─────▶│─────────────│
 │ id (PK)         │      │ id (PK)      │      │ id (PK)     │
 │ owner_id (FK)   │      │ building_id  │      │ floor_id    │
-│ name            │      │ floor_number │      │ is_leasable │
+│ property_type   │      │ floor_number │      │ is_leasable │
 │ ...             │      │ ...          │      │ ...         │
-└─────────────────┘      └──────────────┘      └──────┬──────┘
+└──────┬──────────┘      └──────────────┘      └──────┬──────┘
+       │                                              │
+       │ 1:N                                          │
+       │                                              │
+┌──────▼──────────────┐                      ┌───────▼──────────┐
+│  parking_spaces     │                      │  private_visits │
+│─────────────────────│                      │──────────────────│
+│ id (PK)             │                      │ id (PK)          │
+│ building_id (FK)    │                      │ space_id (FK)    │
+│ assigned_to_user_id │                      │ sales_rep_id (FK)│
+│ ...                 │                      │ ...              │
+└─────────────────────┘                      └──────────────────┘
                                                        │
                                                        │ 1:N
                                                        │
@@ -130,10 +142,19 @@ CREATE TABLE users (
     last_login_at TIMESTAMP,
     failed_login_attempts INTEGER DEFAULT 0,
     account_locked_until TIMESTAMP,
+    -- Leave management for sales reps
+    leave_status VARCHAR(20) DEFAULT 'ACTIVE' CHECK (leave_status IN (
+        'ACTIVE', 'ON_LEAVE', 'SICK_LEAVE', 'VACATION'
+    )),
+    leave_start_date DATE,
+    leave_end_date DATE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     created_by UUID REFERENCES users(id),
-    updated_by UUID REFERENCES users(id)
+    updated_by UUID REFERENCES users(id),
+    -- Soft delete fields
+    deleted_at TIMESTAMP,
+    deleted_by UUID REFERENCES users(id)
 );
 ```
 
@@ -141,6 +162,8 @@ CREATE TABLE users (
 - `idx_users_email` on `email`
 - `idx_users_role` on `role`
 - `idx_users_created_at` on `created_at`
+- `idx_users_deleted_at` on `deleted_at` WHERE `deleted_at IS NULL`
+- `idx_users_leave_status` on `(leave_status, leave_start_date, leave_end_date)` WHERE `role = 'SALES_REP'`
 
 ### 3.2 buildings
 
@@ -155,11 +178,18 @@ CREATE TABLE buildings (
     latitude DECIMAL(10, 8),
     longitude DECIMAL(11, 8),
     total_floors INTEGER NOT NULL CHECK (total_floors > 0),
+    -- Property type expansion: COMMERCIAL, RESIDENTIAL, MIXED_USE
+    property_type VARCHAR(20) DEFAULT 'COMMERCIAL' CHECK (property_type IN (
+        'COMMERCIAL', 'RESIDENTIAL', 'MIXED_USE'
+    )),
     amenities JSONB, -- Array of strings
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     created_by UUID REFERENCES users(id),
-    updated_by UUID REFERENCES users(id)
+    updated_by UUID REFERENCES users(id),
+    -- Soft delete fields
+    deleted_at TIMESTAMP,
+    deleted_by UUID REFERENCES users(id)
 );
 ```
 
@@ -167,6 +197,8 @@ CREATE TABLE buildings (
 - `idx_buildings_owner_id` on `owner_id`
 - `idx_buildings_location` on `(latitude, longitude)` using GIST
 - `idx_buildings_created_at` on `created_at`
+- `idx_buildings_property_type` on `property_type`
+- `idx_buildings_deleted_at` on `deleted_at` WHERE `deleted_at IS NULL`
 
 ### 3.3 floors
 
@@ -188,6 +220,9 @@ CREATE TABLE floors (
     updated_at TIMESTAMP DEFAULT NOW(),
     created_by UUID REFERENCES users(id),
     updated_by UUID REFERENCES users(id),
+    -- Soft delete fields
+    deleted_at TIMESTAMP,
+    deleted_by UUID REFERENCES users(id),
     UNIQUE(building_id, floor_number)
 );
 ```
@@ -195,6 +230,7 @@ CREATE TABLE floors (
 **Indexes:**
 - `idx_floors_building_id` on `building_id`
 - `idx_floors_building_floor` on `(building_id, floor_number)`
+- `idx_floors_deleted_at` on `deleted_at` WHERE `deleted_at IS NULL`
 
 ### 3.4 spaces
 
@@ -210,6 +246,7 @@ CREATE TABLE spaces (
     usage_type VARCHAR(20) NOT NULL CHECK (usage_type IN (
         'OFFICE', 'CANTEEN', 'RESTROOM', 'STORAGE', 'CORRIDOR', 'JANITOR', 'OTHER'
     )),
+    -- Canteen can now be leasable (contract-based or lent)
     is_leasable BOOLEAN DEFAULT TRUE,
     base_price_monthly DECIMAL(12, 2),
     currency VARCHAR(3) DEFAULT 'USD',
@@ -222,6 +259,9 @@ CREATE TABLE spaces (
     updated_at TIMESTAMP DEFAULT NOW(),
     created_by UUID REFERENCES users(id),
     updated_by UUID REFERENCES users(id),
+    -- Soft delete fields
+    deleted_at TIMESTAMP,
+    deleted_by UUID REFERENCES users(id),
     CHECK (usable_sqft <= gross_sqft)
 );
 ```
@@ -232,6 +272,7 @@ CREATE TABLE spaces (
 - `idx_spaces_availability_status` on `availability_status`
 - `idx_spaces_search` on `(is_leasable, availability_status)` WHERE `is_leasable = TRUE`
 - `idx_spaces_price` on `base_price_monthly` WHERE `is_leasable = TRUE`
+- `idx_spaces_deleted_at` on `deleted_at` WHERE `deleted_at IS NULL`
 
 ### 3.5 bids
 
@@ -252,6 +293,9 @@ CREATE TABLE bids (
     updated_at TIMESTAMP DEFAULT NOW(),
     created_by UUID REFERENCES users(id),
     updated_by UUID REFERENCES users(id),
+    -- Soft delete fields
+    deleted_at TIMESTAMP,
+    deleted_by UUID REFERENCES users(id),
     CHECK (bid_amount > 0)
 );
 ```
@@ -288,6 +332,9 @@ CREATE TABLE contracts (
     updated_at TIMESTAMP DEFAULT NOW(),
     created_by UUID REFERENCES users(id),
     updated_by UUID REFERENCES users(id),
+    -- Soft delete fields
+    deleted_at TIMESTAMP,
+    deleted_by UUID REFERENCES users(id),
     CHECK (end_date IS NULL OR end_date > start_date)
 );
 ```
@@ -327,6 +374,9 @@ CREATE TABLE payments (
     updated_at TIMESTAMP DEFAULT NOW(),
     created_by UUID REFERENCES users(id),
     updated_by UUID REFERENCES users(id),
+    -- Soft delete fields
+    deleted_at TIMESTAMP,
+    deleted_by UUID REFERENCES users(id),
     CHECK (installment_number > 0 AND installment_number <= total_installments)
 );
 ```
@@ -351,7 +401,10 @@ CREATE TABLE notifications (
     message TEXT NOT NULL,
     is_read BOOLEAN DEFAULT FALSE,
     metadata JSONB,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    -- Soft delete fields
+    deleted_at TIMESTAMP,
+    deleted_by UUID REFERENCES users(id)
 );
 ```
 
@@ -375,17 +428,23 @@ CREATE TABLE private_visits (
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     status VARCHAR(20) DEFAULT 'SCHEDULED' CHECK (status IN (
-        'SCHEDULED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'
+        'SCHEDULED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'RESCHEDULED'
     )),
     visit_type VARCHAR(20) DEFAULT 'PRIVATE' CHECK (visit_type IN (
         'PRIVATE', 'GROUP', 'VIRTUAL'
     )),
     notes TEXT,
     contact_preference VARCHAR(20), -- CALL, WHATSAPP, EMAIL
+    -- Rescheduling tracking (when sales rep is on leave)
+    rescheduled_from_visit_id UUID REFERENCES private_visits(id) ON DELETE SET NULL,
+    rescheduled_reason TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     created_by UUID REFERENCES users(id),
     updated_by UUID REFERENCES users(id),
+    -- Soft delete fields
+    deleted_at TIMESTAMP,
+    deleted_by UUID REFERENCES users(id),
     CHECK (end_time > start_time)
 );
 ```
@@ -404,7 +463,51 @@ CREATE TABLE private_visits (
 - Application logic validates time overlaps before insertion
 - Query checks for existing visits on same date with overlapping time ranges
 
-### 3.10 role_hierarchy_config
+### 3.10 parking_spaces
+
+Stores parking spaces that can be assigned to clients/owners. Parking can be associated with leased spaces or standalone.
+
+```sql
+CREATE TABLE parking_spaces (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    building_id UUID REFERENCES buildings(id) ON DELETE RESTRICT NOT NULL,
+    space_number VARCHAR(50) NOT NULL,
+    parking_type VARCHAR(20) DEFAULT 'STANDARD' CHECK (parking_type IN (
+        'STANDARD', 'RESERVED', 'HANDICAP', 'ELECTRIC_CHARGING'
+    )),
+    is_available BOOLEAN DEFAULT TRUE,
+    -- Assignment tracking
+    assigned_to_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    assigned_to_contract_id UUID REFERENCES contracts(id) ON DELETE SET NULL,
+    assigned_at TIMESTAMP,
+    monthly_fee DECIMAL(10, 2),
+    currency VARCHAR(3) DEFAULT 'USD',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id),
+    -- Soft delete fields
+    deleted_at TIMESTAMP,
+    deleted_by UUID REFERENCES users(id),
+    UNIQUE(building_id, space_number)
+);
+```
+
+**Indexes:**
+- `idx_parking_spaces_building_id` on `building_id`
+- `idx_parking_spaces_assigned_to_user` on `assigned_to_user_id`
+- `idx_parking_spaces_assigned_to_contract` on `assigned_to_contract_id`
+- `idx_parking_spaces_available` on `is_available` WHERE `is_available = TRUE`
+- `idx_parking_spaces_deleted_at` on `deleted_at` WHERE `deleted_at IS NULL`
+
+**Notes:**
+- Parking can be assigned to a user (client/owner) directly
+- Parking can be linked to a contract/lease
+- Both assignment types can coexist (user assignment takes precedence)
+- Parking availability is tracked separately from space availability
+
+### 3.11 role_hierarchy_config
 
 Stores configurable role hierarchy relationships to enable/disable hierarchical oversight.
 
@@ -424,6 +527,9 @@ CREATE TABLE role_hierarchy_config (
     updated_at TIMESTAMP DEFAULT NOW(),
     created_by UUID REFERENCES users(id),
     updated_by UUID REFERENCES users(id),
+    -- Soft delete fields
+    deleted_at TIMESTAMP,
+    deleted_by UUID REFERENCES users(id),
     UNIQUE(organization_id, parent_role, child_role)
 );
 ```
@@ -448,7 +554,7 @@ The system implements conditional hierarchy for Sales Rep team reporting:
 
 This ensures cost-effective hierarchy where Assistant Manager is optional and only created when needed, avoiding unnecessary overhead.
 
-### 3.11 user_role_hierarchy
+### 3.12 user_role_hierarchy
 
 Stores actual hierarchical relationships between users based on role hierarchy configuration.
 
@@ -463,6 +569,9 @@ CREATE TABLE user_role_hierarchy (
     updated_at TIMESTAMP DEFAULT NOW(),
     created_by UUID REFERENCES users(id),
     updated_by UUID REFERENCES users(id),
+    -- Soft delete fields
+    deleted_at TIMESTAMP,
+    deleted_by UUID REFERENCES users(id),
     UNIQUE(parent_user_id, child_user_id),
     CHECK (parent_user_id != child_user_id)
 );
@@ -473,7 +582,7 @@ CREATE TABLE user_role_hierarchy (
 - `idx_user_role_hierarchy_child` on `child_user_id`
 - `idx_user_role_hierarchy_active` on `(is_active, parent_user_id)`
 
-### 3.12 audit_logs
+### 3.13 audit_logs
 
 Stores audit trail for all system actions.
 
@@ -524,6 +633,9 @@ CREATE TABLE audit_logs (
 | users | user_role_hierarchy | 1:N (parent) | CASCADE |
 | users | user_role_hierarchy | 1:N (child) | CASCADE |
 | role_hierarchy_config | user_role_hierarchy | 1:N | SET NULL |
+| buildings | parking_spaces | 1:N | RESTRICT |
+| users | parking_spaces | 1:N (assigned_to) | SET NULL |
+| contracts | parking_spaces | 1:N | SET NULL |
 
 ### 4.2 Relationship Details
 
@@ -700,6 +812,7 @@ All foreign keys enforce referential integrity:
 - `COMPLETED` - Visit completed
 - `CANCELLED` - Visit cancelled
 - `NO_SHOW` - Client did not show up
+- `RESCHEDULED` - Visit rescheduled (e.g., sales rep on leave)
 
 **Private Visit Type:**
 - `PRIVATE` - Private visit (one-on-one)
@@ -742,8 +855,27 @@ npm run migrate:status
 5. **Version control** all migration files
 6. **Document breaking changes** in migration comments
 
+### 8.4 Soft Delete Implementation
+
+All tables now include `deleted_at` and `deleted_by` fields for recycle bin functionality:
+
+- **Default Behavior:** All queries exclude soft-deleted records (`WHERE deleted_at IS NULL`)
+- **Recycle Bin Access:** Only Super Admin can view/restore deleted records
+- **Permanent Delete:** Only Super Admin can permanently delete from recycle bin
+- **Indexes:** Partial indexes on `deleted_at` for performance
+
+### 8.5 Parent-Child Deletion Strategies
+
+For parent-child relationships (buildings→floors→spaces), deletion supports two strategies:
+
+- **`strategy=detach`**: Remove parent reference only (set `parent_id` to NULL)
+- **`strategy=cascade`**: Delete parent and all children (soft delete)
+
+This is controlled via API parameter: `DELETE /api/buildings/:id?strategy=cascade`
+
 ---
 
 **Last Updated:** 2025-01-27  
-**Database Version:** PostgreSQL 14+
+**Database Version:** PostgreSQL 14+  
+**Schema Version:** 2.0
 

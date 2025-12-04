@@ -1,6 +1,6 @@
-# Enterprise Multi-Floor Commercial Office Leasing Platform
+# Neorem
 
-A cloud-based SaaS platform for managing multi-floor commercial office space leasing, renting, and sales. The system serves property owners, brokers, tenants, property managers, and administrators.
+A cloud-based SaaS platform for managing multi-floor commercial and residential property leasing, renting, and sales. The system serves property owners, brokers, tenants, property managers, and administrators.
 
 ## 🚀 Quick Start
 
@@ -78,11 +78,13 @@ This platform streamlines commercial real estate transactions from space discove
 **Database:**
 - PostgreSQL 14+ (Primary)
 - Redis 6+ (Cache & Sessions)
-- MongoDB 6+ (Analytics, Phase 3)
+
+**Storage:**
+- Google Cloud Storage (File/Resource Storage)
 
 **Infrastructure:**
 - Docker containers
-- Cloud Run / ECS Fargate (Phase 1)
+- Google Cloud Run (Containerized deployment)
 - Kubernetes (Phase 2+)
 
 ## 📁 Project Structure

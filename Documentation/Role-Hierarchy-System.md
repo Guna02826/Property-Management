@@ -2,7 +2,13 @@
 
 ## Overview
 
-The role hierarchy system provides a configurable mechanism to enforce hierarchical relationships between user roles, ensuring proper oversight and reporting structures. The system is designed to be flexible and can be enabled or disabled per organization.
+The role hierarchy system provides a highly configurable mechanism to enforce hierarchical relationships between user roles, ensuring proper oversight and reporting structures. The system is designed to be extremely flexible and adapt to each organization's unique structure:
+
+- **Small Companies:** May have only Owners
+- **Medium Companies:** Owners + Managers
+- **Large Companies:** Multiple Managers, Assistant Managers, and Sales Reps
+
+The system supports multiple managers per organization, multiple assistant managers per manager, and multiple sales reps per manager/assistant manager. Hierarchy can be enabled or disabled per organization, and organizations can configure which roles are active in their structure.
 
 ## Database Schema
 
@@ -39,14 +45,41 @@ This conditional logic ensures cost-effective hierarchy where Assistant Manager 
 
 ### Standard Hierarchy Structure
 
+**Small Company (Owner Only):**
+```
+OWNER
+```
+
+**Medium Company (Owner + Manager):**
 ```
 OWNER
   └── MANAGER
-      ├── ASSISTANT_MANAGER (optional, based on Owner or Manager's need)
-      │   └── SALES_REP (if Assistant Manager exists)
       └── SALES_REP (if no Assistant Manager)
           └── CLIENT (via bookings/visits)
 ```
+
+**Large Company (Multiple Managers, Assistant Managers, Sales Reps):**
+```
+OWNER
+  ├── MANAGER_1
+  │   ├── ASSISTANT_MANAGER_1 (optional)
+  │   │   ├── SALES_REP_1
+  │   │   ├── SALES_REP_2
+  │   │   └── SALES_REP_3
+  │   └── SALES_REP_4 (if no Assistant Manager)
+  ├── MANAGER_2
+  │   └── ASSISTANT_MANAGER_2
+  │       ├── SALES_REP_5
+  │       └── SALES_REP_6
+  └── MANAGER_3
+      └── SALES_REP_7
+```
+
+**Key Features:**
+- Multiple Managers can report to the same Owner
+- Multiple Assistant Managers can report to the same Manager
+- Multiple Sales Reps can report to the same Manager or Assistant Manager
+- System adapts to organization size and structure
 
 ### Hierarchy Rules
 
@@ -232,6 +265,82 @@ async function getSalesRepsUnderManager(managerId: UUID): Promise<User[]> {
   
   // Return combined list (direct + indirect via Assistant Manager)
   return [...directSalesReps, ...indirectSalesReps];
+}
+```
+
+## Organization-Level Role Configuration
+
+### Role Activation per Organization
+
+Organizations can enable/disable specific roles based on their needs:
+
+```typescript
+interface OrganizationRoleConfig {
+  organization_id: UUID;
+  roles_enabled: {
+    MANAGER: boolean;
+    ASSISTANT_MANAGER: boolean;
+    SALES_REP: boolean;
+  };
+  max_managers?: number; // Optional limit
+  max_assistant_managers_per_manager?: number; // Optional limit
+  max_sales_reps_per_parent?: number; // Optional limit
+}
+```
+
+### Organization Configuration UI
+
+The system provides an organization-level role configuration interface:
+
+```typescript
+// Get organization role configuration
+GET /api/v1/organizations/:orgId/role-config
+
+// Update organization role configuration
+PUT /api/v1/organizations/:orgId/role-config
+{
+  "roles_enabled": {
+    "MANAGER": true,
+    "ASSISTANT_MANAGER": true,
+    "SALES_REP": true
+  },
+  "max_managers": null, // No limit
+  "max_assistant_managers_per_manager": 3,
+  "max_sales_reps_per_parent": 10
+}
+```
+
+### Dynamic Hierarchy Validation
+
+The system validates hierarchy based on organization configuration:
+
+```typescript
+async function validateHierarchyAssignment(
+  organizationId: UUID,
+  parentRole: string,
+  childRole: string
+): Promise<boolean> {
+  // Get organization role configuration
+  const orgConfig = await this.getOrganizationRoleConfig(organizationId);
+  
+  // Check if roles are enabled for this organization
+  if (!orgConfig.roles_enabled[parentRole] || !orgConfig.roles_enabled[childRole]) {
+    throw new ValidationError(
+      `Role ${parentRole} or ${childRole} is not enabled for this organization`
+    );
+  }
+  
+  // Check limits if configured
+  if (orgConfig.max_managers && parentRole === 'MANAGER') {
+    const managerCount = await this.countManagers(organizationId);
+    if (managerCount >= orgConfig.max_managers) {
+      throw new ValidationError(
+        `Maximum number of managers (${orgConfig.max_managers}) reached for this organization`
+      );
+    }
+  }
+  
+  return true;
 }
 ```
 
@@ -430,8 +539,109 @@ async function migrateExistingSalesReps(): Promise<void> {
 }
 ```
 
+## Multiple Managers/Assistant Managers/Sales Reps Support
+
+### Creating Multiple Managers
+
+```typescript
+// Create multiple managers for the same owner
+const manager1 = await createUser({
+  role: 'MANAGER',
+  organization_id: orgId,
+  parent_id: ownerId
+});
+
+const manager2 = await createUser({
+  role: 'MANAGER',
+  organization_id: orgId,
+  parent_id: ownerId
+});
+
+// Both managers report to the same owner
+```
+
+### Creating Multiple Assistant Managers
+
+```typescript
+// Create multiple assistant managers for the same manager
+const assistantManager1 = await createUser({
+  role: 'ASSISTANT_MANAGER',
+  organization_id: orgId,
+  parent_id: managerId
+});
+
+const assistantManager2 = await createUser({
+  role: 'ASSISTANT_MANAGER',
+  organization_id: orgId,
+  parent_id: managerId
+});
+
+// Both assistant managers report to the same manager
+```
+
+### Creating Multiple Sales Reps
+
+```typescript
+// Create multiple sales reps under the same manager
+const salesRep1 = await createUser({
+  role: 'SALES_REP',
+  organization_id: orgId,
+  parent_id: managerId // or assistantManagerId
+});
+
+const salesRep2 = await createUser({
+  role: 'SALES_REP',
+  organization_id: orgId,
+  parent_id: managerId
+});
+
+// Both sales reps report to the same manager (or assistant manager)
+```
+
+### Querying Multiple Hierarchies
+
+```typescript
+// Get all managers for an owner
+async function getOwnerManagers(ownerId: UUID): Promise<User[]> {
+  const hierarchies = await this.userRoleHierarchyRepository.find({
+    where: {
+      parent_user_id: ownerId,
+      is_active: true
+    },
+    relations: ['child_user', 'hierarchy_config']
+  });
+  
+  return hierarchies
+    .filter(h => h.hierarchy_config.child_role === 'MANAGER')
+    .map(h => h.child_user);
+}
+
+// Get all assistant managers for a manager
+async function getManagerAssistantManagers(managerId: UUID): Promise<User[]> {
+  const hierarchies = await this.userRoleHierarchyRepository.find({
+    where: {
+      parent_user_id: managerId,
+      is_active: true
+    },
+    relations: ['child_user', 'hierarchy_config']
+  });
+  
+  return hierarchies
+    .filter(h => h.hierarchy_config.child_role === 'ASSISTANT_MANAGER')
+    .map(h => h.child_user);
+}
+```
+
+## Best Practices
+
+1. **Start Simple:** Small organizations should start with Owner-only structure
+2. **Scale Gradually:** Add Managers, then Assistant Managers, then Sales Reps as needed
+3. **Configure Limits:** Set appropriate limits to prevent hierarchy bloat
+4. **Monitor Performance:** Track hierarchy depth and width for performance optimization
+5. **Document Structure:** Maintain clear documentation of each organization's hierarchy
+
 ---
 
 **Last Updated:** 2025-01-27  
-**Version:** 1.0
+**Version:** 2.0
 

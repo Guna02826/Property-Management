@@ -1,7 +1,7 @@
 # Software Requirements Specification
-## Enterprise Multi-Floor Commercial Office Leasing Platform
+## Neorem Platform
 
-**Version:** 1.0  
+**Version:** 2.0  
 **Date:** 2025-01-27  
 **Document Type:** Software Requirements Specification  
 **Target Audience:** Development Team
@@ -27,7 +27,7 @@
 
 ### 1.1 Project Overview
 
-A cloud-based SaaS platform for managing multi-floor commercial office space leasing, renting, and sales. The system serves property owners, brokers, tenants, property managers, and administrators.
+Neorem is a cloud-based SaaS platform for managing multi-floor commercial and residential property leasing, renting, and sales. The system serves property owners, brokers, tenants, property managers, and administrators. The platform supports both commercial office spaces and residential housing units, with comprehensive parking management, flexible role hierarchies, and dynamic API capabilities.
 
 ### 1.2 Primary Objectives
 
@@ -56,11 +56,14 @@ A cloud-based SaaS platform for managing multi-floor commercial office space lea
 
 #### Core Leasing Operations
 - Multi-building, multi-floor space management with real-time availability
-- Support for leasable (offices) and non-leasable spaces (canteens, restrooms, storage, corridors)
+- Support for commercial, residential, and mixed-use properties
+- Support for leasable spaces (offices, residential units, canteens) and non-leasable spaces (restrooms, storage, corridors)
+- Canteen management with contract-based or lent agreements (can be leased to third parties)
 - Real-time bidding with WebSocket notifications
 - Automated lease document generation
 - Payment schedule tracking and invoicing (scheduled, due, overdue, paid)
 - Support for lease, rental, and sale transaction types
+- Parking space management with client/owner assignment tracking
 
 #### User Management
 - Multi-role access control (Owners, Clients, Brokers, Agents, Support, Super Admin)
@@ -70,9 +73,11 @@ A cloud-based SaaS platform for managing multi-floor commercial office space lea
 
 #### Property Management
 - Building, floor, and space management with bulk operations
+- Property type support: Commercial, Residential, Mixed-Use
 - Automatic floor generation on building creation
-- Advanced search and filtering (location, size, price, amenities, ESG ratings)
-- AI-powered property recommendations
+- Advanced search and filtering (location, size, price, amenities, property type, ESG ratings)
+- Parking space assignment and availability tracking
+- AI-powered property recommendations (vector-based similarity matching only)
 - Map integration with heatmaps and commute time calculator
 
 #### Financial Tracking
@@ -193,12 +198,15 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 
 ### 4.2 Building & Floor Management
 
-**FR-2.1** The system shall allow owners to create buildings with name, address, coordinates, and total floors.  
+**FR-2.1** The system shall allow owners to create buildings with name, address, coordinates, total floors, and property type (COMMERCIAL, RESIDENTIAL, MIXED_USE).  
 **FR-2.2** The system shall automatically create floor records (1 to N) when a building is created.  
-**FR-2.3** The system shall allow owners to update building information.  
+**FR-2.3** The system shall allow owners to update building information including property type.  
 **FR-2.4** The system shall allow owners to update floor square footage and amenities.  
 **FR-2.5** The system shall calculate net leasable square footage as total square footage minus common area square footage.  
-**FR-2.6** The system shall support non-leasable spaces (canteens, restrooms, storage, corridors) in floor planning.
+**FR-2.6** The system shall support leasable spaces (offices, residential units, canteens) and non-leasable spaces (restrooms, storage, corridors) in floor planning.  
+**FR-2.7** The system shall support canteen spaces that can be leased to third parties (contract-based or lent agreements).  
+**FR-2.8** The system shall allow parking space management with assignment to clients/owners or contracts.  
+**FR-2.9** The system shall track parking availability and assignments separately from space availability.
 
 ### 4.3 Space Management
 
@@ -211,12 +219,13 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 
 ### 4.4 Search & Discovery
 
-**FR-4.1** The system shall allow clients to search spaces by location, size, price, amenities, and availability.  
+**FR-4.1** The system shall allow clients to search spaces by location, size, price, amenities, property type (COMMERCIAL, RESIDENTIAL, MIXED_USE), and availability.  
 **FR-4.2** The system shall display spaces on an interactive map with property markers.  
-**FR-4.3** The system shall allow clients to filter spaces by building, floor, square footage, price range, and amenities.  
+**FR-4.3** The system shall allow clients to filter spaces by building, floor, square footage, price range, property type, amenities, and parking availability.  
 **FR-4.4** The system shall allow clients to compare multiple spaces side-by-side.  
 **FR-4.5** The system shall return only leasable spaces in client search results.  
-**FR-4.6** The system shall use cursor-based pagination for all list endpoints.
+**FR-4.6** The system shall use cursor-based pagination for all list endpoints.  
+**FR-4.7** The system shall support dynamic field selection, filtering, and sorting via query parameters.
 
 ### 4.5 Private Visit Booking
 
@@ -231,19 +240,72 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 **FR-5.9** The system shall send visit reminder notifications (24 hours and 1 hour before scheduled time).  
 **FR-5.10** The system shall allow clients to view their scheduled visits and visit history.  
 **FR-5.11** The system shall allow sales representatives to view and manage visits assigned to them.  
-**FR-5.12** The system shall allow managers to view all visits for their subordinate team members.
+**FR-5.12** The system shall allow managers to view all visits for their subordinate team members.  
+**FR-5.13** The system shall automatically detect when a sales representative is on leave and postpone coordinated visits.  
+**FR-5.14** The system shall automatically reschedule visits to the next available date/time for the same sales representative when they are on leave.  
+**FR-5.15** The system shall notify clients about visit rescheduling due to sales representative unavailability.  
+**FR-5.16** The system shall check sales representative availability before confirming visit bookings.  
+**FR-5.17** The system shall track sales representative leave status and leave dates.  
+**FR-5.18** The system shall restrict client access to visit details - clients can only see that they "were interested" in a property, not full visit management details.  
+**FR-5.19** The system shall allow only Sales Reps, Managers, and Assistant Managers to see full visit details and management.  
+**FR-5.20** The system shall show interest indicators on property details for clients instead of full visit information.
 
-### 4.6 Role Hierarchy & Management
+### 4.6 Parking Management
 
-**FR-5.13** The system shall support configurable role hierarchy relationships.  
-**FR-5.14** The system shall enforce hierarchical reporting structure: Owner → Manager → Assistant Manager (optional) → Sales Rep. Manager must always report to Owner. Assistant Manager is optional and reports to Manager when created. Sales Rep team reports to Assistant Manager when Assistant Manager exists, otherwise reports directly to Manager.  
-**FR-5.15** The system shall allow enabling or disabling hierarchy rules per organization.  
-**FR-5.16** The system shall support hierarchical approval workflows (e.g., Sales Rep actions requiring Manager or Assistant Manager approval based on hierarchy).  
-**FR-5.17** The system shall allow managers and assistant managers to view and manage activities of subordinate team members (Sales Reps). Managers can view all subordinates including Assistant Managers and their Sales Rep teams.  
-**FR-5.18** The system shall track hierarchical relationships between users in the `user_role_hierarchy` table.  
-**FR-5.19** The system shall validate hierarchy rules when creating or assigning users to roles, implementing conditional logic to determine correct parent based on Assistant Manager existence.
+**FR-5.21** The system shall allow parking space creation and management per building.  
+**FR-5.22** The system shall support parking space assignment to specific clients or owners.  
+**FR-5.23** The system shall support parking space assignment linked to contracts/leases.  
+**FR-5.24** The system shall track parking availability separately from space availability.  
+**FR-5.25** The system shall support different parking types (STANDARD, RESERVED, HANDICAP, ELECTRIC_CHARGING).  
+**FR-5.26** The system shall include parking information in property search filters.  
+**FR-5.27** The system shall display parking assignments in property details.
 
-### 4.7 Bidding & Negotiation
+### 4.7 Recycle Bin & Soft Delete System
+
+**FR-5.28** The system shall implement soft delete for all database records (deleted_at, deleted_by fields).  
+**FR-5.29** The system shall automatically exclude soft-deleted records from all queries by default.  
+**FR-5.30** The system shall allow only Super Admin to access the recycle bin (view deleted records).  
+**FR-5.31** The system shall allow only Super Admin to restore records from the recycle bin.  
+**FR-5.32** The system shall allow only Super Admin to permanently delete records from the recycle bin.  
+**FR-5.33** The system shall track who deleted each record and when (deleted_by, deleted_at).  
+**FR-5.34** The system shall support bulk restore and bulk permanent delete operations (Super Admin only).  
+**FR-5.35** The system shall implement automatic cleanup of deleted records after retention period (configurable, default 90 days).
+
+### 4.8 Parent-Child Relationship Management
+
+**FR-5.36** The system shall support parent-child relationships (buildings→floors→spaces, etc.).  
+**FR-5.37** The system shall allow deletion strategy selection: detach (remove parent reference) or cascade (delete parent and children).  
+**FR-5.38** The system shall prevent orphaned records when using detach strategy.  
+**FR-5.39** The system shall show relationship warnings and confirmation dialogs before deletion.  
+**FR-5.40** The system shall implement relationship integrity checks.
+
+### 4.9 Dynamic API & Database Field Handling
+
+**FR-5.41** The system shall support dynamic field selection via query parameters (fields=id,name,address.city).  
+**FR-5.42** The system shall support dynamic filtering via query parameters (filter[property_type]=COMMERCIAL&filter[price][gte]=1000).  
+**FR-5.43** The system shall support dynamic sorting via query parameters (sort=price:asc,created_at:desc).  
+**FR-5.44** The system shall use database schema introspection for field validation.  
+**FR-5.45** The system shall provide generic CRUD endpoints that adapt to schema changes without API modifications.  
+**FR-5.46** The system shall provide schema endpoint to discover available fields and relations.  
+**FR-5.47** The system shall validate requested fields against actual database schema.
+
+### 4.10 Role Hierarchy & Management
+
+**FR-5.48** The system shall support highly configurable role hierarchy relationships that adapt to each organization's structure.  
+**FR-5.49** The system shall allow organizations to enable/disable roles per their needs (small companies may have only Owners, medium companies may have Owners + Managers, large companies may have multiple Managers, Assistant Managers, and Sales Reps).  
+**FR-5.50** The system shall support multiple managers per organization.  
+**FR-5.51** The system shall support multiple assistant managers per manager.  
+**FR-5.52** The system shall support multiple sales reps per manager/assistant manager.  
+**FR-5.53** The system shall provide organization-level role configuration UI.  
+**FR-5.54** The system shall make hierarchy validation dynamic based on organization configuration.  
+**FR-5.55** The system shall enforce hierarchical reporting structure: Owner → Manager → Assistant Manager (optional) → Sales Rep. Manager must always report to Owner. Assistant Manager is optional and reports to Manager when created. Sales Rep team reports to Assistant Manager when Assistant Manager exists, otherwise reports directly to Manager.  
+**FR-5.56** The system shall allow enabling or disabling hierarchy rules per organization.  
+**FR-5.57** The system shall support hierarchical approval workflows (e.g., Sales Rep actions requiring Manager or Assistant Manager approval based on hierarchy).  
+**FR-5.58** The system shall allow managers and assistant managers to view and manage activities of subordinate team members (Sales Reps). Managers can view all subordinates including Assistant Managers and their Sales Rep teams.  
+**FR-5.59** The system shall track hierarchical relationships between users in the `user_role_hierarchy` table.  
+**FR-5.60** The system shall validate hierarchy rules when creating or assigning users to roles, implementing conditional logic to determine correct parent based on Assistant Manager existence.
+
+### 4.11 Bidding & Negotiation
 
 **FR-6.1** The system shall allow clients to place bids on available spaces.  
 **FR-6.2** The system shall send real-time bid notifications to space owners via WebSockets.  
@@ -253,7 +315,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 **FR-6.6** The system shall maintain bid history for each space and user.  
 **FR-6.7** The system shall notify clients when their bid status changes.
 
-### 4.8 Lease & Contract Management
+### 4.12 Lease & Contract Management
 
 **FR-7.1** The system shall automatically generate lease documents from approved bids.  
 **FR-7.2** The system shall support lease, rental, and sale contract types.  
@@ -263,7 +325,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 **FR-7.6** The system shall track contract status (Draft, Pending Signature, Active, Expired, Terminated).  
 **FR-7.7** The system shall maintain contract versioning and audit logs.
 
-### 4.9 Payment Tracking
+### 4.13 Payment Tracking
 
 **FR-8.1** The system shall generate payment schedules based on lease terms and EMI plans.  
 **FR-8.2** The system shall track payment status (Scheduled, Due, Paid, Overdue, Cancelled).  
@@ -273,7 +335,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 **FR-8.6** The system shall track installment numbers and total installments for EMI plans.  
 **FR-8.7** The system shall send payment due and overdue reminders.
 
-### 4.10 Dashboards & Reporting
+### 4.14 Dashboards & Reporting
 
 **FR-9.1** The system shall display owner dashboards with occupancy rates, revenue, active bids, and pending leases.  
 **FR-9.2** The system shall display client dashboards with active bids, lease status, and upcoming payment schedule.  
@@ -282,7 +344,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 **FR-9.5** The system shall calculate and display upcoming income from scheduled payments.  
 **FR-9.6** The system shall allow export of reports in CSV, PDF, and Excel formats.
 
-### 4.11 Notifications
+### 4.15 Notifications
 
 **FR-10.1** The system shall send notifications via email, WhatsApp, push, and in-app channels.  
 **FR-10.2** The system shall send automated notifications for bid updates, lease milestones, payment events, and visit confirmations/reminders.  
@@ -292,7 +354,12 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 ### 4.12 AI & Analytics
 
 **FR-11.1** The system shall provide AI-powered pricing suggestions for spaces.  
-**FR-11.2** The system shall provide AI-powered space recommendations to clients based on preferences.  
+**FR-11.2** The system shall provide AI-powered space recommendations to clients based on preferences using vector similarity matching only.  
+**FR-11.3** The system shall use pre-existing embedding models (OpenAI, Cohere, or open-source) for generating embeddings.  
+**FR-11.4** The system shall store embeddings in a vector database (pgvector extension or external service like Pinecone/Weaviate).  
+**FR-11.5** The system shall use cosine similarity or other vector distance metrics for recommendations.  
+**FR-11.6** The system shall NOT create, train, or fine-tune new AI models.  
+**FR-11.7** The system shall NOT implement custom ML pipelines or model training infrastructure.  
 **FR-11.3** The system shall provide AI-suggested bid strategies to clients.  
 **FR-11.4** The system shall calculate occupancy and revenue forecasts.  
 **FR-11.5** The system shall calculate bid success probability scores.
@@ -467,6 +534,8 @@ The system shall maintain the following core data entities:
 - Email verification status
 - Two-factor authentication settings
 - Account lock status and failed login attempts
+- Leave management (leave_status, leave_start_date, leave_end_date) for sales reps
+- Soft delete fields (deleted_at, deleted_by)
 
 #### 6.2.2 Buildings
 
@@ -476,7 +545,9 @@ The system shall maintain the following core data entities:
 - Name, address (structured JSONB: street, city, state, country, postal_code)
 - Geographic coordinates (latitude, longitude)
 - Total floors count
+- Property type (COMMERCIAL, RESIDENTIAL, MIXED_USE)
 - Amenities (JSONB array)
+- Soft delete fields (deleted_at, deleted_by)
 
 #### 6.2.3 Floors
 
@@ -884,6 +955,96 @@ The system shall maintain the following core data entities:
 ---
 
 ## 8. Assumptions & Constraints
+
+### 8.1 Technology Stack Constraints
+
+**AC-1.1** The system shall use **PostgreSQL ONLY** as the database - no MongoDB or other NoSQL databases.
+
+**AC-1.2** The system shall use **Google Cloud Storage ONLY** for file/resource storage - no AWS S3, no Azure Blob Storage.
+
+**AC-1.3** The system shall use **Sequelize ONLY** as the ORM - no Prisma, no TypeORM.
+
+**AC-1.4** The system shall use **Google Cloud Run ONLY** for containerized deployment - no AWS ECS/Fargate, no Azure Container Apps.
+
+**AC-1.5** The system shall use **Google Cloud Platform services ONLY** for monitoring and logging:
+- Google Cloud Logging (no ELK Stack, no CloudWatch)
+- Google Cloud Monitoring (no Datadog, no New Relic)
+- Google Cloud Trace (no Jaeger, no Zipkin)
+
+**AC-1.6** The system shall **NOT** develop native mobile applications - web app only with Progressive Web App (PWA) capabilities.
+
+**AC-1.7** The system shall use **TanStack Query (React Query)** for server state management, with Zustand or Context for client-only state. Redux only if complex global state management needed.
+
+**AC-1.8** The system shall implement AI recommendations using **vector matching ONLY**:
+- Use pre-existing embedding models (OpenAI, Cohere, or open-source)
+- Store embeddings in vector database (pgvector or Pinecone/Weaviate)
+- Use cosine similarity or vector distance metrics
+- **NO** creation of new AI models
+- **NO** training of machine learning models
+- **NO** custom ML pipelines
+
+### 8.2 Database Constraints
+
+**AC-2.1** All tables shall include soft delete fields (`deleted_at`, `deleted_by`) for recycle bin functionality.
+
+**AC-2.2** All queries shall exclude soft-deleted records by default.
+
+**AC-2.3** Only Super Admin can access recycle bin and perform permanent deletions.
+
+### 8.3 API Constraints
+
+**AC-3.1** APIs shall work dynamically based on query/request parameters without hardcoded field mappings.
+
+**AC-3.2** Frontend can request any fields via query parameters (`?fields=id,name,address.city`).
+
+**AC-3.3** APIs shall support dynamic filtering, sorting, and field selection without requiring API modifications for database schema changes.
+
+### 8.4 Role Hierarchy Constraints
+
+**AC-4.1** Role hierarchy must be highly configurable to adapt to each organization's structure:
+- Small companies: May have only Owners
+- Medium companies: Owners + Managers
+- Large companies: Multiple Managers, Assistant Managers, Sales Reps
+
+**AC-4.2** System must support multiple managers, assistant managers, and sales reps per organization.
+
+### 8.5 Access Control Constraints
+
+**AC-5.1** Clients must NOT have access to visit details/management - only "interest" status on properties.
+
+**AC-5.2** Only Sales Reps, Managers, and Assistant Managers can see full visit details.
+
+### 8.6 Visit Scheduling Constraints
+
+**AC-6.1** If Sales Rep is on leave, coordinated visits must be automatically postponed and rescheduled.
+
+**AC-6.2** System must check sales rep availability before confirming visits.
+
+### 8.7 Property Type Constraints
+
+**AC-7.1** System must support COMMERCIAL, RESIDENTIAL, and MIXED_USE property types.
+
+**AC-7.2** Search and filtering must accommodate all property types.
+
+### 8.8 Canteen Management Constraints
+
+**AC-8.1** Canteens can be lent or contract-based agreements (not just non-leasable spaces).
+
+**AC-8.2** Canteens can be leased to third parties.
+
+### 8.9 Parking Constraints
+
+**AC-9.1** Parking spaces must be assignable to specific clients/owners.
+
+**AC-9.2** Parking can be associated with leased spaces or standalone.
+
+### 8.10 Parent-Child Relationship Constraints
+
+**AC-10.1** System must support deletion strategies: detach (remove parent reference) or cascade (delete parent and children).
+
+**AC-10.2** User must choose deletion behavior when deleting parent records with children.
+
+## 8.11 Original Assumptions & Constraints
 
 ### 8.1 Technical Constraints
 
