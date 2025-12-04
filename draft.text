@@ -1,0 +1,151 @@
+1. Basic Property Information
+-Property Title / Name
+-Description (long, short)
+-Property Type (Apartment, Villa, Commercial, PG, Land, etc.)
+-Purpose: Rent / Lease / Sale
+-Availability Status (Available, Occupied, Under Maintenance)
+-Owner ID (reference)
+
+
+2. Location Information
+-Address Line 1
+-Address Line 2
+-City
+-State
+-Country
+-Pincode
+-Landmark
+-Latitude
+-Longitude
+-Google Map Embed URL
+-Area / Locality name
+
+
+3. Property Size & Structure
+-Built-up Area (sqft.)
+-Carpet Area
+-Plot Area
+-Number of Floors in building
+-Floor on which property is located
+-Number of Bedrooms
+-Number of Bathrooms
+-Number of Balconies
+-Hall / Kitchen type
+-Facing (North, East, South…)
+-Flooring Type (Tiles, Marble, Wood…)
+-Year Built
+-Last Renovation Date
+
+4. Pricing & Payment
+-Monthly Rent / Selling Price
+-Maintenance Charges
+-Deposit Amount / Advance
+-Electricity Charges (separate / included)
+-Water Charges (separate / included)
+-Negotiable (yes/no)
+-Lease Duration (if rental)
+-Payment Frequency (Monthly, Quarterly, Yearly)
+
+5. Amenities
+-Internal Amenities
+-Air Conditioner
+-Bed / Furniture
+-Modular Kitchen
+-Wardrobes
+-Geyser
+-Inverter / Power Backup
+-Wifi
+-Dishwasher
+-Washing Machine
+-Curtains / Lights / Fans
+-Building Amenities
+-Lift
+-Car Parking / Bike Parking
+-Security Guard
+-CCTV
+-Gym
+-Swimming Pool
+-Community Hall
+-Children Play Area
+-Garden
+-Solar Power
+-Visitor Parking
+-Intercom
+
+6. Utilities
+-Electricity Provider
+-Water Supply Type (Borewell / Corporation / Both)
+-Gas Connection (Pipeline / Cylinder)
+-Sewage Type
+-Internet Provider
+-Backup Power Details
+
+7. Rules & Restrictions
+-Pets Allowed / Not Allowed
+-Family / Bachelors Allowed
+-Smoking Allowed / Not Allowed
+-Alcohol Restrictions
+-Guests Allowed / Not Allowed
+-Commercial Use Allowed?
+-Noise Restrictions
+
+8. Documents Upload (Owner)
+-Property Ownership Proof
+-Government ID Proof
+-Electricity Bill
+-Rental Agreement
+-Property Tax Bill
+-Previous Tenant Record
+-NOC (if required)
+-OC (Occupancy Certificate)
+-Floor Plan (PDF/Image)
+-Building Approval Documents
+
+9. Media Uploads
+-Images
+-Cover Image
+-Living Room
+-Bedroom(s)
+-Kitchen
+-Bathroom(s)
+-Balcony
+-Building Entrance
+-Parking Area
+-Amenities (gym, pool, etc.)
+-Floor plan images
+-Videos
+-Property walkthrough video
+-Drone view (optional)
+
+10. Availability & Scheduling
+-Available From Date
+-Minimum Stay (months)
+-Maximum Stay (optional)
+-Visiting Hours / Time Slots
+-Contact Preference for site visit (Call / WhatsApp)
+
+11. Nearby Places
+-Schools
+-Hospitals
+-Bus Stops
+-Metro Stations
+-Supermarkets
+-Restaurants
+-Banks / ATMs
+-Parks
+-Workplaces (IT parks, offices nearby)
+
+12. Insurance & Safety
+-Insurance Type (if any)
+-Fire Safety Equipment
+-Emergency Exits
+-First Aid
+-Safety Certifications
+
+13. Miscellaneous
+-Parking Count (Car/Bike)
+-Furnishing Status (Fully / Semi / Unfurnished)
+-Tenant Type Preferred
+-Property Highlights
+-Virtual Tour Link
+-Notes / Internal Comments (visible to admin only)
