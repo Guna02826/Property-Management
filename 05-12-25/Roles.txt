@@ -76,3 +76,5 @@
 // - Similar to Residential Tenant but with business-focused features such as CAM reconciliation, larger lease terms, and multiple users per account
 // - Access to payment processing, maintenance, and communication portals
 // - Review documents, schedules, and account information
+
+
