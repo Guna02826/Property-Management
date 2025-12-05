@@ -37,12 +37,12 @@
 - **Form Handling:** React Hook Form with Zod validation
 - **Real-time:** Socket.io-client for WebSocket connections
 - **Maps:** Google Maps API
-- **AR/VR:** Three.js, A-Frame (Phase 4)
-- **Charts:** Recharts or Chart.js for analytics
-- **Date Handling:** date-fns or Day.js
+- **AR/VR:** Three.js
+- **Charts:** Recharts for analytics
+- **Date Handling:** date-fns
 
 #### Mobile Application
-- **Approach:** Progressive Web App (PWA) - NO native mobile app development
+- **Approach:** Progressive Web App
 - **Framework:** React 18+ with Next.js 14+ (responsive web app)
 - **Mobile Optimization:** Responsive design for mobile browsers
 - **PWA Features:** Service workers, offline support, installable on mobile devices
@@ -56,7 +56,7 @@
 - **Runtime:** Node.js 18+ LTS
 - **Framework:** Fastify 4+ (REST API)
 - **Language:** TypeScript 5.0+
-- **WebSocket:** Socket.io or native WebSocket server
+- **WebSocket:** Socket.io
 - **GraphQL:** Apollo Server (optional, Phase 3)
 - **Validation:** Zod for schema validation
 - **Documentation:** OpenAPI 3.0/Swagger with fastify-swagger
@@ -69,10 +69,10 @@
 - **Password Hashing:** bcrypt (cost factor 12)
 
 #### Background Jobs
-- **Queue:** BullMQ or Bull (Redis-based)
-- **Scheduling:** node-cron or BullMQ cron jobs
-- **Email:** nodemailer with SendGrid/SES transport
-- **PDF Generation:** pdfkit or puppeteer
+- **Queue:** Google Cloud Tasks or Cloud Pub/Sub (cloud-managed)
+- **Scheduling:** Google Cloud Scheduler (cron jobs)
+- **Email:** nodemailer with SendGrid transport
+- **PDF Generation:** pdfkit
 
 ### 1.3 Database & Storage
 
@@ -80,7 +80,7 @@
 - **PostgreSQL:** Version 14+ (managed: Google Cloud SQL)
 - **ORM:** Sequelize (ONLY - no Prisma/TypeORM)
 - **Migrations:** Sequelize migrations
-- **Connection Pooling:** pgBouncer or Sequelize built-in pooler
+- **Connection Pooling:** pgBouncer
 
 #### Caching & Session Storage
 - **Redis:** Version 6+ (managed: Google Cloud Memorystore)
@@ -106,17 +106,17 @@
 
 #### Monitoring & Logging
 - **APM:** Google Cloud Monitoring (ONLY)
-- **Metrics:** Google Cloud Monitoring + Grafana (optional)
+- **Metrics:** Google Cloud Monitoring (ONLY)
 - **Logging:** Google Cloud Logging (ONLY)
 - **Tracing:** Google Cloud Trace (ONLY)
-- **No External Services:** No Datadog, New Relic, ELK Stack, CloudWatch, etc.
+- **No External Services:** No Datadog, New Relic, ELK Stack, CloudWatch, Grafana, etc.
 
 ### 1.5 AI/ML Services
 
 #### AI/ML Services (Vector Matching Only)
 - **Approach:** Vector similarity search using pre-trained embeddings
 - **Embedding Models:** OpenAI embeddings, Cohere embeddings, or open-source models (sentence-transformers)
-- **Vector Database:** pgvector (PostgreSQL extension) or Pinecone/Weaviate
+- **Vector Database:** pgvector (PostgreSQL extension)
 - **Use Case:** Semantic search and similarity matching for space recommendations
 
 #### AI Implementation Constraints

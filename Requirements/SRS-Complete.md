@@ -356,7 +356,7 @@ Role-based access control (RBAC) enforces granular permissions ensuring users ac
 **FR-11.1** The system shall provide AI-powered pricing suggestions for spaces.  
 **FR-11.2** The system shall provide AI-powered space recommendations to clients based on preferences using vector similarity matching only.  
 **FR-11.3** The system shall use pre-existing embedding models (OpenAI, Cohere, or open-source) for generating embeddings.  
-**FR-11.4** The system shall store embeddings in a vector database (pgvector extension or external service like Pinecone/Weaviate).  
+**FR-11.4** The system shall store embeddings in a vector database using pgvector (PostgreSQL extension).  
 **FR-11.5** The system shall use cosine similarity or other vector distance metrics for recommendations.  
 **FR-11.6** The system shall NOT create, train, or fine-tune new AI models.  
 **FR-11.7** The system shall NOT implement custom ML pipelines or model training infrastructure.  
@@ -977,7 +977,7 @@ The system shall maintain the following core data entities:
 
 **AC-1.8** The system shall implement AI recommendations using **vector matching ONLY**:
 - Use pre-existing embedding models (OpenAI, Cohere, or open-source)
-- Store embeddings in vector database (pgvector or Pinecone/Weaviate)
+- Store embeddings in vector database using pgvector (PostgreSQL extension)
 - Use cosine similarity or vector distance metrics
 - **NO** creation of new AI models
 - **NO** training of machine learning models
