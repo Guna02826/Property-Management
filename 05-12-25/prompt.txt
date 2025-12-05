@@ -1,4 +1,4 @@
-Create a new file called Requirements/Data Model & Entities.txt with:
-Core Entities List - Portfolio, Property, Unit, Tenant, Lease, Payment, Work Order, User, Role with must-have attributes
-Entity Relationships - How entities connect (One-to-Many, Many-to-Many)
-Key Workflows - Tenant onboarding, rent payment, maintenance request, lease creation workflows with steps and roles
+Create a new file Requirements/Data Model & Entities.txt containing:
+1) Core entities (Portfolio, Property, Unit, Tenant, Lease, Payment, Work Order, User, Role) with must-have attributes (mark required vs optional).
+2) Entity relationships (cardinality and join tables).
+3) MVP workflows (tenant onboarding, rent payment, maintenance request→work order, lease creation/renewal, property/unit setup) with steps and involved roles.
