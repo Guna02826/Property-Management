@@ -1,0 +1,726 @@
+// ===============================
+// Data Model & Entities
+// ===============================
+
+// ===========================================
+// 1. CORE ENTITIES & ATTRIBUTES
+// ===========================================
+
+// 1.1 Portfolio
+// - id (PK, required)
+// - name (required)
+// - description (optional)
+// - owner_id (FK to User, required)
+// - status (required: active, inactive, archived)
+// - created_at (required)
+// - updated_at (required)
+// - created_by (FK to User, required)
+// - notes (optional)
+
+// 1.2 Property
+// - id (PK, required)
+// - name (required)
+// - property_type (required: residential, commercial, mixed_use, single_family, multi_family)
+// - address_line1 (required)
+// - address_line2 (optional)
+// - city (required)
+// - state (required)
+// - zip_code (required)
+// - country (required)
+// - latitude (optional)
+// - longitude (optional)
+// - year_built (optional)
+// - total_units (optional)
+// - total_square_feet (optional)
+// - property_status (required: active, inactive, under_renovation, for_sale, sold)
+// - ownership_type (optional: owned, leased, managed)
+// - legal_entity (optional)
+// - tax_id (optional)
+// - insurance_policy_number (optional)
+// - insurance_expiry_date (optional)
+// - purchase_date (optional)
+// - purchase_price (optional)
+// - current_valuation (optional)
+// - portfolio_id (FK to Portfolio, optional - can belong to multiple via join table)
+// - created_at (required)
+// - updated_at (required)
+// - created_by (FK to User, required)
+
+// 1.3 Unit
+// - id (PK, required)
+// - unit_number (required)
+// - unit_name (optional)
+// - property_id (FK to Property, required)
+// - building_id (FK to Building, optional)
+// - floor_id (FK to Floor, optional)
+// - unit_type (required: residential, commercial, storage, parking, common_space)
+// - bedrooms (optional)
+// - bathrooms (optional)
+// - square_feet (optional)
+// - rent_amount (optional)
+// - deposit_amount (optional)
+// - unit_status (required: available, occupied, reserved, maintenance, unavailable)
+// - amenities (optional: JSON array or text)
+// - floor_plan_url (optional)
+// - photos (optional: JSON array of URLs)
+// - virtual_tour_url (optional)
+// - condition_notes (optional)
+// - created_at (required)
+// - updated_at (required)
+// - created_by (FK to User, required)
+
+// 1.4 Tenant
+// - id (PK, required)
+// - tenant_type (required: residential, commercial, corporate)
+// - first_name (required for residential)
+// - last_name (required for residential)
+// - company_name (required for commercial/corporate)
+// - email (required, unique)
+// - phone (required)
+// - alternate_phone (optional)
+// - date_of_birth (optional)
+// - ssn_last4 (optional)
+// - emergency_contact_name (optional)
+// - emergency_contact_phone (optional)
+// - mailing_address_line1 (optional)
+// - mailing_address_line2 (optional)
+// - mailing_city (optional)
+// - mailing_state (optional)
+// - mailing_zip_code (optional)
+// - employment_status (optional)
+// - employer_name (optional)
+// - monthly_income (optional)
+// - credit_score (optional)
+// - credit_check_date (optional)
+// - background_check_status (optional: pending, passed, failed, not_required)
+// - tenant_status (required: prospect, applicant, active, past, blacklisted)
+// - communication_preferences (optional: JSON - email, sms, phone)
+// - notes (optional)
+// - created_at (required)
+// - updated_at (required)
+// - created_by (FK to User, optional)
+
+// 1.5 Lease
+// - id (PK, required)
+// - lease_number (required, unique)
+// - tenant_id (FK to Tenant, required)
+// - unit_id (FK to Unit, required)
+// - lease_type (required: residential, commercial)
+// - start_date (required)
+// - end_date (required)
+// - monthly_rent (required)
+// - security_deposit (required)
+// - pet_deposit (optional)
+// - late_fee_amount (optional)
+// - late_fee_percentage (optional)
+// - prorated_rent (optional)
+// - prorated_rent_start_date (optional)
+// - lease_status (required: draft, pending_signature, active, expired, terminated, renewed)
+// - auto_renewal (optional: boolean)
+// - renewal_notice_days (optional: default 90)
+// - lease_document_url (optional)
+// - signed_document_url (optional)
+// - signature_status (optional: pending, signed, expired)
+// - signed_date (optional)
+// - termination_date (optional)
+// - termination_reason (optional)
+// - move_in_date (optional)
+// - move_out_date (optional)
+// - notes (optional)
+// - created_at (required)
+// - updated_at (required)
+// - created_by (FK to User, required)
+// - signed_by_tenant (optional: boolean)
+// - signed_by_landlord (optional: boolean)
+
+// Commercial Lease Additional Fields (optional):
+// - base_rent (optional)
+// - percentage_rent (optional)
+// - cam_charges (optional)
+// - common_area_factor (optional)
+
+// 1.6 Payment
+// - id (PK, required)
+// - payment_number (required, unique)
+// - lease_id (FK to Lease, required)
+// - tenant_id (FK to Tenant, required)
+// - unit_id (FK to Unit, required)
+// - payment_type (required: rent, deposit, late_fee, pet_fee, other)
+// - amount (required)
+// - due_date (required)
+// - paid_date (optional)
+// - payment_method (optional: credit_card, debit_card, ach, check, cash, other)
+// - payment_status (required: pending, completed, failed, refunded, partial)
+// - transaction_id (optional)
+// - receipt_url (optional)
+// - late_fee_applied (optional: boolean)
+// - late_fee_amount (optional)
+// - notes (optional)
+// - created_at (required)
+// - updated_at (required)
+// - created_by (FK to User, optional)
+// - processed_by (FK to User, optional)
+
+// 1.7 Work Order
+// - id (PK, required)
+// - work_order_number (required, unique)
+// - maintenance_request_id (FK to MaintenanceRequest, optional)
+// - property_id (FK to Property, required)
+// - unit_id (FK to Unit, optional)
+// - title (required)
+// - description (required)
+// - priority (required: emergency, urgent, routine, cosmetic)
+// - work_order_status (required: draft, assigned, in_progress, completed, cancelled, on_hold)
+// - assigned_to_type (optional: internal, vendor)
+// - assigned_to_id (FK to User or Vendor, optional)
+// - assigned_to_name (optional)
+// - estimated_cost (optional)
+// - actual_cost (optional)
+// - estimated_completion_date (optional)
+// - scheduled_date (optional)
+// - started_date (optional)
+// - completed_date (optional)
+// - completion_notes (optional)
+// - before_photos (optional: JSON array of URLs)
+// - after_photos (optional: JSON array of URLs)
+// - invoice_url (optional)
+// - approval_required (optional: boolean)
+// - approved_by (FK to User, optional)
+// - approved_date (optional)
+// - created_at (required)
+// - updated_at (required)
+// - created_by (FK to User, required)
+
+// 1.8 MaintenanceRequest
+// - id (PK, required)
+// - request_number (required, unique)
+// - tenant_id (FK to Tenant, required)
+// - property_id (FK to Property, required)
+// - unit_id (FK to Unit, required)
+// - title (required)
+// - description (required)
+// - priority (required: emergency, urgent, routine, cosmetic)
+// - request_status (required: submitted, acknowledged, assigned, in_progress, completed, closed, cancelled)
+// - photos (optional: JSON array of URLs)
+// - attachments (optional: JSON array of URLs)
+// - tenant_feedback (optional)
+// - tenant_rating (optional: 1-5)
+// - created_at (required)
+// - updated_at (required)
+// - acknowledged_at (optional)
+// - acknowledged_by (FK to User, optional)
+
+// 1.9 User
+// - id (PK, required)
+// - email (required, unique)
+// - password_hash (required)
+// - first_name (required)
+// - last_name (required)
+// - phone (optional)
+// - phone_verified (optional: boolean)
+// - email_verified (optional: boolean)
+// - two_factor_enabled (optional: boolean)
+// - two_factor_secret (optional)
+// - user_status (required: active, inactive, suspended, pending_verification)
+// - last_login_at (optional)
+// - password_reset_token (optional)
+// - password_reset_expires (optional)
+// - profile_picture_url (optional)
+// - timezone (optional)
+// - language_preference (optional)
+// - notification_preferences (optional: JSON)
+// - created_at (required)
+// - updated_at (required)
+// - created_by (FK to User, optional)
+
+// 1.10 Role
+// - id (PK, required)
+// - role_name (required, unique)
+// - role_code (required, unique)
+// - description (optional)
+// - is_system_role (required: boolean)
+// - permissions (required: JSON array of permission strings)
+// - created_at (required)
+// - updated_at (required)
+
+// Standard Roles:
+// - super_admin
+// - property_owner
+// - property_manager
+// - portfolio_manager
+// - maintenance_coordinator
+// - maintenance_technician
+// - accountant
+// - tenant
+// - vendor
+
+// ===========================================
+// 2. ENTITY RELATIONSHIPS & CARDINALITY
+// ===========================================
+
+// 2.1 Direct Relationships (One-to-Many)
+
+// Portfolio → Property (One-to-Many via join table for many-to-many)
+// Property → Unit (One-to-Many)
+// Property → WorkOrder (One-to-Many)
+// Property → MaintenanceRequest (One-to-Many)
+// Tenant → Lease (One-to-Many)
+// Tenant → Payment (One-to-Many)
+// Tenant → MaintenanceRequest (One-to-Many)
+// Unit → Lease (One-to-Many)
+// Unit → Payment (One-to-Many)
+// Unit → WorkOrder (One-to-Many)
+// Unit → MaintenanceRequest (One-to-Many)
+// Lease → Payment (One-to-Many)
+// MaintenanceRequest → WorkOrder (One-to-One or One-to-Many)
+// User → Portfolio (One-to-Many as owner)
+// User → Property (One-to-Many as creator)
+// User → Unit (One-to-Many as creator)
+// User → Lease (One-to-Many as creator)
+// User → WorkOrder (One-to-Many as creator, assignee, approver)
+// User → MaintenanceRequest (One-to-Many as creator, acknowledger)
+
+// 2.2 Many-to-Many Relationships (Require Join Tables)
+
+// Portfolio ↔ Property (Many-to-Many)
+// Join Table: portfolio_property
+// - portfolio_id (FK to Portfolio, PK)
+// - property_id (FK to Property, PK)
+// - assigned_at (required)
+// - assigned_by (FK to User, optional)
+
+// User ↔ Role (Many-to-Many)
+// Join Table: user_role
+// - user_id (FK to User, PK)
+// - role_id (FK to Role, PK)
+// - assigned_at (required)
+// - assigned_by (FK to User, optional)
+// - expires_at (optional)
+
+// User ↔ Property (Many-to-Many - Property Manager assignments)
+// Join Table: user_property
+// - user_id (FK to User, PK)
+// - property_id (FK to Property, PK)
+// - access_level (optional: full, read_only, limited)
+// - assigned_at (required)
+// - assigned_by (FK to User, optional)
+
+// User ↔ Portfolio (Many-to-Many - Portfolio Manager assignments)
+// Join Table: user_portfolio
+// - user_id (FK to User, PK)
+// - portfolio_id (FK to Portfolio, PK)
+// - access_level (optional: full, read_only, limited)
+// - assigned_at (required)
+// - assigned_by (FK to User, optional)
+
+// Tenant ↔ Unit (Many-to-Many - Historical tenant-unit relationships)
+// Join Table: tenant_unit_history
+// - tenant_id (FK to Tenant, PK)
+// - unit_id (FK to Unit, PK)
+// - lease_id (FK to Lease, optional)
+// - start_date (required)
+// - end_date (optional)
+// - created_at (required)
+
+// 2.3 Optional Hierarchical Relationships
+
+// Property → Building (One-to-Many, optional)
+// Building → Floor (One-to-Many, optional)
+// Floor → Unit (One-to-Many, optional)
+
+// Building Entity (Optional):
+// - id (PK, required)
+// - building_name (required)
+// - building_number (optional)
+// - property_id (FK to Property, required)
+// - year_built (optional)
+// - total_floors (optional)
+// - total_units (optional)
+// - total_square_feet (optional)
+// - created_at (required)
+// - updated_at (required)
+
+// Floor Entity (Optional):
+// - id (PK, required)
+// - floor_number (required)
+// - floor_name (optional)
+// - building_id (FK to Building, required)
+// - square_feet (optional)
+// - created_at (required)
+// - updated_at (required)
+
+// ===========================================
+// 3. MVP WORKFLOWS
+// ===========================================
+
+// 3.1 Tenant Onboarding Workflow
+// Steps:
+// 1. Tenant Registration
+//    - Role: Tenant (self-registration) OR Property Manager (manual entry)
+//    - Create Tenant record with basic info (name, email, phone)
+//    - Status: prospect
+//    - System sends welcome email with portal access credentials
+//
+// 2. Application Submission
+//    - Role: Tenant
+//    - Tenant completes application form in portal
+//    - Upload required documents (ID, proof of income, references)
+//    - Update Tenant record with employment, income, references
+//    - Status: applicant
+//
+// 3. Background Check & Credit Screening
+//    - Role: Property Manager
+//    - Property Manager initiates background check (if integrated)
+//    - Update Tenant record: background_check_status, credit_score, credit_check_date
+//
+// 4. Application Review
+//    - Role: Property Manager, Portfolio Manager
+//    - Review application, credit score, references
+//    - Approve or reject application
+//    - If approved: Status: active (ready for lease)
+//    - If rejected: Status: past, send rejection notice
+//
+// 5. Lease Creation (see Lease Creation Workflow)
+//
+// 6. Move-In
+//    - Role: Property Manager, Tenant
+//    - Schedule move-in date
+//    - Update Lease: move_in_date
+//    - Update Unit: unit_status = occupied
+//    - Create initial payment records for rent and deposits
+//
+// Involved Roles: Tenant, Property Manager, Portfolio Manager
+
+// 3.2 Rent Payment Workflow
+// Steps:
+// 1. Payment Due Date Calculation
+//    - Role: System (automated)
+//    - Based on Lease start_date and monthly_rent
+//    - Create Payment record for each month
+//    - Payment status: pending
+//    - Set due_date (typically 1st of month or per lease terms)
+//
+// 2. Payment Reminder (Automated)
+//    - Role: System (automated)
+//    - Send email/SMS reminders (3, 5, 7 days before due date)
+//    - Reminder includes payment amount, due date, payment link
+//
+// 3. Payment Submission
+//    - Role: Tenant
+//    - Tenant accesses portal, navigates to Payments
+//    - Selects payment (rent, deposit, etc.)
+//    - Chooses payment method (credit card, ACH, etc.)
+//    - Submits payment through integrated payment gateway
+//
+// 4. Payment Processing
+//    - Role: System (automated) OR Financial Team (manual)
+//    - Payment gateway processes transaction
+//    - If successful:
+//      - Update Payment: payment_status = completed, paid_date = today, transaction_id
+//      - Generate receipt (PDF)
+//      - Send confirmation email to tenant with receipt
+//      - Update Lease balance if applicable
+//    - If failed:
+//      - Update Payment: payment_status = failed
+//      - Send failure notification to tenant
+//
+// 5. Late Payment Handling (if overdue)
+//    - Role: System (automated)
+//    - On due_date + 1 day, check if payment_status != completed
+//    - Calculate late fee based on lease terms
+//    - Create new Payment record: payment_type = late_fee, amount = calculated late fee
+//    - Send late payment notice to tenant
+//    - Update original Payment: late_fee_applied = true, late_fee_amount
+//
+// 6. Payment Reconciliation (Optional - for manual payments)
+//    - Role: Financial Team, Property Manager
+//    - Mark manual payments (check, cash) as completed
+//    - Attach receipt/documentation
+//    - Update payment records
+//
+// Involved Roles: Tenant, System (automated), Financial Team, Property Manager
+
+// 3.3 Maintenance Request → Work Order Workflow
+// Steps:
+// 1. Maintenance Request Submission
+//    - Role: Tenant
+//    - Tenant accesses portal, navigates to Maintenance
+//    - Fills out request form: title, description, priority, unit
+//    - Uploads photos/attachments
+//    - Submits request
+//    - System creates MaintenanceRequest record
+//    - Status: submitted
+//    - System sends confirmation email to tenant
+//
+// 2. Request Acknowledgment
+//    - Role: Property Manager, Maintenance Coordinator
+//    - Property Manager/Maintenance Coordinator reviews request
+//    - Updates MaintenanceRequest: status = acknowledged, acknowledged_at, acknowledged_by
+//    - System sends acknowledgment email to tenant
+//
+// 3. Work Order Creation
+//    - Role: Property Manager, Maintenance Coordinator
+//    - Creates WorkOrder from MaintenanceRequest
+//    - Links: maintenance_request_id, property_id, unit_id
+//    - Copies: title, description, priority, photos
+//    - WorkOrder status: draft
+//    - Updates MaintenanceRequest: status = assigned
+//
+// 4. Work Order Assignment
+//    - Role: Property Manager, Maintenance Coordinator
+//    - Determines if internal (technician) or external (vendor)
+//    - Assigns to User (technician) or Vendor
+//    - Sets scheduled_date, estimated_cost, estimated_completion_date
+//    - Updates WorkOrder: status = assigned, assigned_to_type, assigned_to_id
+//    - Sends assignment notification to assignee
+//
+// 5. Work Order Execution
+//    - Role: Maintenance Technician, Vendor
+//    - Assignee reviews work order details
+//    - Updates WorkOrder: status = in_progress, started_date
+//    - Performs maintenance/repair work
+//    - Uploads progress photos if needed
+//
+// 6. Work Order Completion
+//    - Role: Maintenance Technician, Vendor
+//    - Updates WorkOrder: status = completed, completed_date, completion_notes
+//    - Uploads after_photos
+//    - Enters actual_cost
+//    - If vendor: uploads invoice
+//    - If approval_required and actual_cost > threshold: status = pending_approval
+//
+// 7. Work Order Approval (if required)
+//    - Role: Property Manager, Portfolio Manager
+//    - Reviews completed work order and costs
+//    - Approves or requests changes
+//    - If approved: updates WorkOrder: approved_by, approved_date, status = completed
+//
+// 8. Request Closure
+//    - Role: System (automated) OR Property Manager
+//    - Updates MaintenanceRequest: status = completed
+//    - Sends completion notification to tenant
+//    - Requests tenant feedback/rating
+//
+// 9. Tenant Feedback
+//    - Role: Tenant
+//    - Tenant receives feedback request
+//    - Provides rating (1-5) and optional feedback
+//    - Updates MaintenanceRequest: tenant_rating, tenant_feedback
+//    - Updates MaintenanceRequest: status = closed
+//
+// Involved Roles: Tenant, Property Manager, Maintenance Coordinator, Maintenance Technician, Vendor, Portfolio Manager
+
+// 3.4 Lease Creation/Renewal Workflow
+// Steps:
+// 1. Lease Initiation
+//    - Role: Property Manager
+//    - Selects Tenant (must be in active status)
+//    - Selects Unit (must be available or reserved)
+//    - Creates Lease record with basic info
+//    - Status: draft
+//
+// 2. Lease Terms Configuration
+//    - Role: Property Manager
+//    - Sets lease dates: start_date, end_date
+//    - Sets financial terms: monthly_rent, security_deposit, pet_deposit
+//    - Sets late fee terms: late_fee_amount or late_fee_percentage
+//    - For commercial: sets base_rent, percentage_rent, CAM charges
+//    - Sets auto_renewal, renewal_notice_days
+//    - Adds notes and special conditions
+//
+// 3. Lease Document Generation
+//    - Role: Property Manager OR System (automated)
+//    - Selects lease template
+//    - System generates lease document (PDF) from template with tenant/unit/terms
+//    - Updates Lease: lease_document_url
+//
+// 4. Lease Review & Approval
+//    - Role: Property Manager, Portfolio Manager (if required)
+//    - Reviews lease terms and document
+//    - Makes adjustments if needed
+//    - Approves lease for signature
+//
+// 5. E-Signature Request
+//    - Role: Property Manager OR System (automated)
+//    - Sends lease document to tenant via e-signature service
+//    - Updates Lease: status = pending_signature, signature_status = pending
+//    - Tenant receives email with signing link
+//
+// 6. Lease Signing
+//    - Role: Tenant, Property Manager (landlord)
+//    - Tenant signs lease electronically
+//    - Property Manager signs lease (if required)
+//    - E-signature service updates signature status
+//    - Updates Lease: signed_by_tenant = true, signed_by_landlord = true, signed_date, signed_document_url
+//
+// 7. Lease Activation
+//    - Role: System (automated) OR Property Manager
+//    - On start_date, updates Lease: status = active
+//    - Updates Unit: unit_status = occupied
+//    - Creates initial Payment records for first month rent and deposits
+//    - Sends welcome email to tenant with lease details
+//
+// 8. Lease Renewal (if applicable)
+//    - Role: System (automated) OR Property Manager
+//    - System sends renewal reminder (90, 60, 30 days before end_date)
+//    - Property Manager initiates renewal process
+//    - Creates new Lease record (or updates existing)
+//    - Links to original lease
+//    - Follows steps 2-7 for new lease terms
+//    - On new lease activation, updates old lease: status = renewed
+//
+// 9. Lease Termination (if applicable)
+//    - Role: Property Manager, Tenant
+//    - Initiates termination process
+//    - Sets termination_date, termination_reason
+//    - Updates Lease: status = terminated
+//    - Updates Unit: unit_status = available (after move-out)
+//    - Processes security deposit return
+//    - Updates Tenant: status = past (if no other active leases)
+//
+// Involved Roles: Property Manager, Portfolio Manager, Tenant
+
+// 3.5 Property/Unit Setup Workflow
+// Steps:
+// 1. Property Registration
+//    - Role: Property Owner, Property Manager, Super Admin
+//    - Creates Property record
+//    - Enters property details: name, type, address, ownership info
+//    - Sets property_status = active
+//    - Optionally assigns to Portfolio(s) via portfolio_property join table
+//
+// 2. Property Verification
+//    - Role: System (automated) OR Property Manager
+//    - Geocoding validation for address
+//    - Address verification (if integrated)
+//    - Updates latitude, longitude if available
+//
+// 3. Building Setup (if applicable)
+//    - Role: Property Manager
+//    - Creates Building record(s) for multi-building properties
+//    - Links Building to Property
+//    - Enters building details: name, number, characteristics
+//
+// 4. Floor Setup (if applicable)
+//    - Role: Property Manager
+//    - Creates Floor record(s) for multi-story buildings
+//    - Links Floor to Building
+//    - Enters floor details: number, name, square footage
+//
+// 5. Unit Creation
+//    - Role: Property Manager, Property Administrator
+//    - Creates Unit record(s)
+//    - Links Unit to Property (and optionally Building, Floor)
+//    - Enters unit details: unit_number, type, bedrooms, bathrooms, square_feet
+//    - Sets rent_amount, deposit_amount (defaults or specific)
+//    - Sets unit_status = available
+//    - Uploads unit photos, floor plans (optional)
+//
+// 6. Unit Documentation
+//    - Role: Property Manager
+//    - Adds unit amenities, condition notes
+//    - Links virtual tour if available
+//    - Completes unit information
+//
+// 7. Property/Unit Activation
+//    - Role: Property Manager
+//    - Reviews all property/unit information
+//    - Marks property and units as ready for leasing
+//    - Property status: active
+//    - Unit status: available
+//
+// 8. Portfolio Assignment (if applicable)
+//    - Role: Portfolio Manager, Property Owner
+//    - Assigns Property to Portfolio(s) via portfolio_property join table
+//    - Sets access levels for property managers
+//
+// Involved Roles: Property Owner, Property Manager, Property Administrator, Portfolio Manager, Super Admin
+
+// ===========================================
+// 4. ADDITIONAL SUPPORTING ENTITIES (Optional for MVP)
+// ===========================================
+
+// 4.1 Document
+// - id (PK, required)
+// - document_name (required)
+// - document_type (required: lease, invoice, receipt, maintenance, property, tenant, other)
+// - file_url (required)
+// - file_size (optional)
+// - mime_type (optional)
+// - related_entity_type (optional: property, unit, tenant, lease, payment, work_order)
+// - related_entity_id (optional)
+// - category (optional)
+// - tags (optional: JSON array)
+// - expiry_date (optional)
+// - access_level (optional: public, private, restricted)
+// - created_at (required)
+// - updated_at (required)
+// - created_by (FK to User, required)
+
+// 4.2 Notification
+// - id (PK, required)
+// - user_id (FK to User, required)
+// - notification_type (required: email, sms, push, in_app)
+// - subject (optional)
+// - message (required)
+// - status (required: pending, sent, failed, read)
+// - sent_at (optional)
+// - read_at (optional)
+// - related_entity_type (optional)
+// - related_entity_id (optional)
+// - created_at (required)
+
+// 4.3 AuditLog
+// - id (PK, required)
+// - user_id (FK to User, optional)
+// - action (required)
+// - entity_type (required)
+// - entity_id (required)
+// - changes (optional: JSON)
+// - ip_address (optional)
+// - user_agent (optional)
+// - created_at (required)
+
+// ===========================================
+// 5. DATA INTEGRITY CONSTRAINTS
+// ===========================================
+
+// - Unique Constraints:
+//   - User.email (unique)
+//   - Tenant.email (unique)
+//   - Lease.lease_number (unique)
+//   - Payment.payment_number (unique)
+//   - WorkOrder.work_order_number (unique)
+//   - MaintenanceRequest.request_number (unique)
+//   - Role.role_name (unique)
+//   - Role.role_code (unique)
+
+// - Foreign Key Constraints:
+//   - All FK relationships must be enforced
+//   - Cascade delete rules to be defined per relationship
+
+// - Business Rules:
+//   - Unit cannot have multiple active leases simultaneously
+//   - Tenant cannot have multiple active leases for same unit
+//   - Payment due_date must be >= lease start_date
+//   - Lease end_date must be > start_date
+//   - WorkOrder cannot be completed without assigned_to
+//   - MaintenanceRequest must have tenant_id, property_id, unit_id
+
+// ===========================================
+// 6. INDEXES (Performance Optimization)
+// ===========================================
+
+// Recommended indexes on:
+// - User.email
+// - Tenant.email
+// - Tenant.tenant_status
+// - Lease.lease_status, Lease.tenant_id, Lease.unit_id, Lease.start_date, Lease.end_date
+// - Payment.payment_status, Payment.due_date, Payment.tenant_id, Payment.lease_id
+// - WorkOrder.work_order_status, WorkOrder.assigned_to_id, WorkOrder.property_id
+// - MaintenanceRequest.request_status, MaintenanceRequest.tenant_id, MaintenanceRequest.property_id
+// - Property.property_status, Property.portfolio_id (via join table)
+// - Unit.unit_status, Unit.property_id
+// - All foreign key columns
+// - All date columns used in queries (created_at, updated_at, due_date, etc.)
+
