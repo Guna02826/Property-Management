@@ -1,0 +1,85 @@
+// ===============================
+// Property Hierarchy Structure & Functions
+// ===============================
+
+// 1. Portfolio
+// - Logical grouping of multiple properties for management and analysis
+// - Belongs to a single owner (typically) or organized by management company
+// - Provides aggregated analytics, performance metrics, and comparative reporting
+// - Enables strategic oversight and portfolio-level decision making
+// - Supports property assignment to multiple portfolios for flexible organization
+
+// 2. Property
+// - Physical real estate asset (can be single building or complex)
+// - Contains one or more buildings (or standalone units for single-family)
+// - Tracks ownership, legal entity, tax information, and insurance details
+// - Manages property-level amenities, infrastructure, and compliance certificates
+// - Provides property-wide financial tracking, occupancy rates, and performance metrics
+// - Supports property status tracking (active, inactive, under renovation, for sale, sold)
+
+// 3. Building (Optional - for complexes)
+// - Physical structure within a property (for multi-building properties)
+// - Contains multiple floors and units
+// - Tracks building-specific characteristics, infrastructure, and amenities
+// - Manages building-level maintenance, elevators, and common areas
+// - Supports building-specific compliance certificates and inspections
+// - Optional level - not required for single-building or single-family properties
+
+// 4. Floor (Optional - for multi-story buildings)
+// - Level within a building (Ground, 1st, 2nd, Basement, etc.)
+// - Contains multiple units, common spaces, and facilities
+// - Tracks floor-specific layout, square footage, and infrastructure
+// - Manages floor-level amenities and access control
+// - Supports floor plan documentation and space allocation
+// - Optional level - not required for single-story properties
+
+// 5. Unit / Space
+// - Leasable or usable space within property/building/floor
+// - Types: Residential Unit, Commercial Unit, Common Space, Amenity Space, Utility Space
+// - Tracks unit details (size, type, bedrooms, bathrooms, amenities)
+// - Manages lease agreements, tenant assignments, and rent collection
+// - Supports unit status tracking (available, occupied, reserved, maintenance, unavailable)
+// - Handles unit-specific financials, maintenance history, and documentation
+
+// 6. Sub-Spaces / Components (Optional)
+// - Detailed breakdown within units (rooms, parking, storage, balconies)
+// - Tracks individual spaces within a unit (living room, kitchen, bedrooms)
+// - Manages assigned parking spaces and storage units
+// - Supports detailed space documentation and condition tracking
+// - Optional level - for advanced space management and detailed tracking
+
+// Supporting Elements (Cross-Level)
+
+// 7. Common Spaces
+// - Shared areas within property/building/floor (lobbies, hallways, corridors, stairwells)
+// - Tracks location, square footage, maintenance responsibility, and usage restrictions
+// - Manages access control, cleaning schedules, and maintenance costs
+// - Supports common area factor calculations for commercial leases
+// - Can exist at property, building, or floor level
+
+// 8. Amenities
+// - Recreational, fitness, social, or service facilities
+// - Types: Property-level (pool, gym, clubhouse), Building-level (lobby, rooftop), Unit-level (in-unit features)
+// - Tracks access levels, usage rules, operating hours, and capacity
+// - Manages booking requirements, fees, and maintenance schedules
+// - Supports amenity-specific financial tracking and insurance
+
+// 9. Infrastructure Elements
+// - Physical systems and equipment (lifts/elevators, stairs, parking, utilities)
+// - Lifts/Elevators: Tracked at building/floor level with maintenance schedules and compliance
+// - Parking: Can be property-level (parking lot) or unit-level (assigned spaces)
+// - Utilities: Meters, HVAC systems, electrical panels tracked separately
+// - Manages maintenance schedules, service contracts, and compliance certificates
+
+// 10. Parking Spaces
+// - Individual parking spots (covered, uncovered, garage, street)
+// - Tracks assignment to units/tenants, fees, and accessibility features
+// - Manages parking space dimensions, type, and EV charging availability
+// - Supports parking fee collection and space reservation
+// - Can be standalone or assigned to specific units
+
+// Hierarchy Flow:
+// Portfolio → Property → Building (optional) → Floor (optional) → Unit → Sub-Spaces (optional)
+// 
+// Supporting elements (Common Spaces, Amenities, Infrastructure, Parking) can exist at multiple levels
+// and are linked to the appropriate parent level (Property, Building, Floor, or Unit)
